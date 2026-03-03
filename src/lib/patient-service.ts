@@ -169,7 +169,7 @@ export async function getCarePlanItems(
 
     const task = title || desc || "Care plan item"
 
-    const rawStatus = cp.status ?? "active"
+    const rawStatus = String(cp.status ?? "active")
     let status: UiCarePlanItem["status"] = "in-progress"
     if (rawStatus === "completed") status = "completed"
     else if (rawStatus === "draft" || rawStatus === "proposed")
