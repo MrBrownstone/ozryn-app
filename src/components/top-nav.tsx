@@ -26,7 +26,7 @@ export function TopNav() {
           <div className="w-px h-6 bg-border"></div>
 
           <Button variant="ghost" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-cyan-500 flex items-center justify-center text-xs font-bold text-white">
+            <div className="w-8 h-8 rounded-full bg-linear-to-br from-primary to-cyan-500 flex items-center justify-center text-xs font-bold text-white">
               DR
             </div>
             <ChevronDown className="w-4 h-4 text-muted-foreground" />

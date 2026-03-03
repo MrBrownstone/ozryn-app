@@ -1,32 +1,46 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Search } from "lucide-react"
-import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  searchPatientsForList,
+  type UiPatientListItem,
+} from "@/lib/patient-service"
 
 interface PatientListProps {
   selectedPatient: string | null
   onSelectPatient: (id: string) => void
 }
 
-const mockPatients = [
-  { id: "1", name: "Sarah Mitchell", mrn: "MRN-2024-001", status: "active", lastVisit: "2 hours ago" },
-  { id: "2", name: "James Chen", mrn: "MRN-2024-002", status: "active", lastVisit: "1 day ago" },
-  { id: "3", name: "Emma Rodriguez", mrn: "MRN-2024-003", status: "pending", lastVisit: "3 days ago" },
-  { id: "4", name: "Michael Torres", mrn: "MRN-2024-004", status: "active", lastVisit: "5 hours ago" },
-  { id: "5", name: "Lisa Anderson", mrn: "MRN-2024-005", status: "inactive", lastVisit: "2 weeks ago" },
-]
-
 export function PatientList({ selectedPatient, onSelectPatient }: PatientListProps) {
   const [searchTerm, setSearchTerm] = useState("")
+  const [patients, setPatients] = useState<UiPatientListItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const filteredPatients = mockPatients.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.mrn.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await searchPatientsForList(searchTerm)
+        if (!cancelled) setPatients(res)
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || "Failed to load patients")
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [searchTerm])
 
   return (
     <Card className="flex flex-col h-full border-border/60">
@@ -44,9 +58,21 @@ export function PatientList({ selectedPatient, onSelectPatient }: PatientListPro
         </div>
       </div>
 
+      {error && (
+        <div className="px-4 py-2 text-xs text-red-600 border-b border-border/60">
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className="px-4 py-2 text-xs text-muted-foreground border-b border-border/60">
+          Loading patients…
+        </div>
+      )}
+
       <ScrollArea className="flex-1">
         <div className="divide-y divide-border/60">
-          {filteredPatients.map((patient) => (
+          {patients.map((patient) => (
             <button
               key={patient.id}
               onClick={() => onSelectPatient(patient.id)}
@@ -58,23 +84,37 @@ export function PatientList({ selectedPatient, onSelectPatient }: PatientListPro
                 <p className="font-medium text-foreground text-sm">{patient.name}</p>
                 <Badge
                   variant={
-                    patient.status === "active" ? "default" : patient.status === "pending" ? "secondary" : "outline"
+                    patient.status === "active"
+                      ? "default"
+                      : patient.status === "pending"
+                      ? "secondary"
+                      : "outline"
                   }
                   className={
                     patient.status === "active"
                       ? "bg-cyan-100 text-cyan-700 hover:bg-cyan-100"
                       : patient.status === "pending"
-                        ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                        : ""
+                      ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                      : ""
                   }
                 >
                   {patient.status}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">{patient.mrn}</p>
-              <p className="text-xs text-muted-foreground mt-1">{patient.lastVisit}</p>
+              {patient.lastVisitRaw && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {patient.lastVisitRaw}
+                </p>
+              )}
             </button>
           ))}
+
+          {!loading && patients.length === 0 && (
+            <div className="px-4 py-6 text-xs text-muted-foreground">
+              No patients found.
+            </div>
+          )}
         </div>
       </ScrollArea>
     </Card>
