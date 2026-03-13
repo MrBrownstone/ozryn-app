@@ -21,7 +21,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-12 gap-4 p-6 h-full">
             {/* Patient List - Left Panel */}
             <div className="col-span-3 flex flex-col gap-4">
-              <PatientList selectedPatient={selectedPatient} onSelectPatient={(id) => setSelectedPatient(id)} />
+              <PatientList selectedPatient={selectedPatient} onSelectPatient={setSelectedPatient} />
             </div>
 
             {/* Main Content Area */}

@@ -29,7 +29,12 @@ export function PatientList({ selectedPatient, onSelectPatient }: PatientListPro
       setError(null)
       try {
         const res = await searchPatientsForList(searchTerm)
-        if (!cancelled) setPatients(res)
+        if (!cancelled) {
+          setPatients(res)
+          if (!selectedPatient && !searchTerm.trim() && res.length > 0) {
+            onSelectPatient(res[0].id)
+          }
+        }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to load patients")
       } finally {
@@ -40,7 +45,7 @@ export function PatientList({ selectedPatient, onSelectPatient }: PatientListPro
     return () => {
       cancelled = true
     }
-  }, [searchTerm])
+  }, [onSelectPatient, searchTerm, selectedPatient])
 
   return (
     <Card className="flex flex-col h-full border-border/60">

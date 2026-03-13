@@ -16,6 +16,82 @@ export interface UiPatientListItem {
   lastVisitRaw: string
 }
 
+export interface UiPatientDetail {
+  id: string
+  name: string
+  mrn: string
+  status: "active" | "inactive"
+  birthDate: string
+  age: string
+  gender: string
+  address: string
+  lastUpdated: string
+}
+
+function formatPatientName(patient: Patient): string {
+  const name = patient.name?.[0]
+  return [name?.given?.[0], name?.family].filter(Boolean).join(" ") || "(no name)"
+}
+
+function formatPatientMrn(patient: Patient): string {
+  return (
+    patient.identifier?.[0]?.value ??
+    (patient.id ? `MRN-${patient.id.substring(0, 8).toUpperCase()}` : "—")
+  )
+}
+
+function formatBirthDate(birthDate: string | undefined): string {
+  if (!birthDate) return "Unknown"
+  const date = new Date(`${birthDate}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return birthDate
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date)
+}
+
+function formatAge(birthDate: string | undefined): string {
+  if (!birthDate) return "Unknown"
+
+  const today = new Date()
+  const dob = new Date(`${birthDate}T00:00:00`)
+  if (Number.isNaN(dob.getTime())) return "Unknown"
+
+  let age = today.getFullYear() - dob.getFullYear()
+  const monthDelta = today.getMonth() - dob.getMonth()
+  const dayDelta = today.getDate() - dob.getDate()
+
+  if (monthDelta < 0 || (monthDelta === 0 && dayDelta < 0)) {
+    age -= 1
+  }
+
+  return age >= 0 ? String(age) : "Unknown"
+}
+
+function formatAddress(patient: Patient): string {
+  const address = patient.address?.[0]
+  if (!address) return "No address on file"
+
+  const line = address.line?.join(", ")
+  return [line, address.city, address.state, address.postalCode, address.country]
+    .filter(Boolean)
+    .join(", ")
+}
+
+function formatLastUpdated(lastUpdated: string | undefined): string {
+  if (!lastUpdated) return "Unknown"
+  const date = new Date(lastUpdated)
+  if (Number.isNaN(date.getTime())) return lastUpdated
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date)
+}
+
 export async function searchPatientsForList(query: string): Promise<UiPatientListItem[]> {
   const params: Record<string, string> = {
     _summary: "true",
@@ -31,14 +107,6 @@ export async function searchPatientsForList(query: string): Promise<UiPatientLis
   const patients = bundleToResources<Patient>(bundle)
 
   return patients.map((p) => {
-    const name = p.name?.[0]
-    const display =
-      [name?.given?.[0], name?.family].filter(Boolean).join(" ") || "(no name)"
-
-    const mrn =
-      p.identifier?.[0]?.value ??
-      (p.id ? `MRN-${p.id.substring(0, 8).toUpperCase()}` : "—")
-
     const status: UiPatientListItem["status"] =
       p.active === false ? "inactive" : "active"
 
@@ -46,8 +114,8 @@ export async function searchPatientsForList(query: string): Promise<UiPatientLis
 
     return {
       id: p.id as string,
-      name: display,
-      mrn,
+      name: formatPatientName(p),
+      mrn: formatPatientMrn(p),
       status,
       lastVisitRaw,
     }
@@ -59,6 +127,23 @@ export async function getPatientById(id: string): Promise<Patient | null> {
     return (await medplum.readResource("Patient", id)) as Patient
   } catch {
     return null
+  }
+}
+
+export async function getPatientDetail(id: string): Promise<UiPatientDetail | null> {
+  const patient = await getPatientById(id)
+  if (!patient?.id) return null
+
+  return {
+    id: patient.id,
+    name: formatPatientName(patient),
+    mrn: formatPatientMrn(patient),
+    status: patient.active === false ? "inactive" : "active",
+    birthDate: formatBirthDate(patient.birthDate),
+    age: formatAge(patient.birthDate),
+    gender: patient.gender ? patient.gender[0].toUpperCase() + patient.gender.slice(1) : "Unknown",
+    address: formatAddress(patient),
+    lastUpdated: formatLastUpdated(patient.meta?.lastUpdated),
   }
 }
 

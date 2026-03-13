@@ -1,61 +1,123 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { getPatientDetail, type UiPatientDetail } from "@/lib/patient-service"
 
 interface PatientDetailProps {
   patientId: string
 }
 
 export function PatientDetail({ patientId }: PatientDetailProps) {
+  const [patient, setPatient] = useState<UiPatientDetail | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!patientId) return
+
+    let cancelled = false
+
+    const load = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const result = await getPatientDetail(patientId)
+        if (!cancelled) {
+          setPatient(result)
+          if (!result) {
+            setError("Patient record not found.")
+          }
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          setError(err?.message || "Failed to load patient.")
+          setPatient(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [patientId])
+
+  if (loading) {
+    return (
+      <Card className="p-6 border-border/60">
+        <p className="text-sm text-muted-foreground">Loading patient…</p>
+      </Card>
+    )
+  }
+
+  if (error || !patient) {
+    return (
+      <Card className="p-6 border-border/60">
+        <Alert className="border-destructive/20 bg-destructive/5">
+          <AlertCircle className="h-4 w-4 text-destructive" />
+          <AlertTitle>Patient unavailable</AlertTitle>
+          <AlertDescription>{error ?? "Patient could not be loaded."}</AlertDescription>
+        </Alert>
+      </Card>
+    )
+  }
+
   return (
     <Card className="p-6 border-border/60">
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Sarah Mitchell</h1>
-          <p className="text-muted-foreground text-sm mt-1">MRN: MRN-2024-001 • DOB: 03/15/1985 • Age: 39</p>
+          <h1 className="text-2xl font-bold text-foreground">{patient.name}</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            MRN: {patient.mrn} • DOB: {patient.birthDate} • Age: {patient.age}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            Edit
-          </Button>
-          <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 text-white">
-            View Full Record
-          </Button>
+          <Button variant="outline" size="sm">Patient/{patient.id}</Button>
+          <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 text-white">FHIR Synced</Button>
         </div>
       </div>
 
-      {/* Vital Signs Grid */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         <Card className="p-4 bg-gradient-to-br from-cyan-50 to-teal-50 border-border/60">
-          <p className="text-xs text-muted-foreground mb-1">Blood Pressure</p>
-          <p className="text-lg font-semibold text-foreground">120/80</p>
-          <p className="text-xs text-cyan-600 mt-1">mmHg • Normal</p>
+          <p className="text-xs text-muted-foreground mb-1">Gender</p>
+          <p className="text-lg font-semibold text-foreground">{patient.gender}</p>
+          <p className="text-xs text-cyan-600 mt-1">FHIR Patient.gender</p>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-cyan-50 to-teal-50 border-border/60">
-          <p className="text-xs text-muted-foreground mb-1">Heart Rate</p>
-          <p className="text-lg font-semibold text-foreground">72</p>
-          <p className="text-xs text-cyan-600 mt-1">bpm • Normal</p>
+          <p className="text-xs text-muted-foreground mb-1">Address</p>
+          <p className="text-sm font-semibold text-foreground">{patient.address}</p>
+          <p className="text-xs text-cyan-600 mt-1">Primary home address</p>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-cyan-50 to-teal-50 border-border/60">
-          <p className="text-xs text-muted-foreground mb-1">Temperature</p>
-          <p className="text-lg font-semibold text-foreground">98.6</p>
-          <p className="text-xs text-cyan-600 mt-1">°F • Normal</p>
+          <p className="text-xs text-muted-foreground mb-1">Status</p>
+          <p className="text-lg font-semibold text-foreground">
+            {patient.status[0].toUpperCase() + patient.status.slice(1)}
+          </p>
+          <p className="text-xs text-cyan-600 mt-1">Project-scoped patient record</p>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-cyan-50 to-teal-50 border-border/60">
-          <p className="text-xs text-muted-foreground mb-1">Last Visit</p>
-          <p className="text-lg font-semibold text-foreground">2 hrs</p>
-          <p className="text-xs text-cyan-600 mt-1">ago • Routine</p>
+          <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
+          <p className="text-sm font-semibold text-foreground">{patient.lastUpdated}</p>
+          <p className="text-xs text-cyan-600 mt-1">Latest Medplum sync</p>
         </Card>
       </div>
 
-      {/* Alert */}
       <Alert className="border-amber-200 bg-amber-50">
         <AlertCircle className="h-4 w-4 text-amber-600" />
-        <AlertTitle className="text-amber-900">Medication Review Due</AlertTitle>
-        <AlertDescription className="text-amber-800">Annual medication review scheduled for next week</AlertDescription>
+        <AlertTitle className="text-amber-900">Live tenant data</AlertTitle>
+        <AlertDescription className="text-amber-800">
+          This header is now reading the patient directly from the active Medplum project instead of placeholder demo data.
+        </AlertDescription>
       </Alert>
     </Card>
   )
