@@ -1,0 +1,277 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:0f5d0fb6-0ca2-4c0d-9d0c-f1c6716d41ab",
+      "resource": {
+        "resourceType": "Patient",
+        "identifier": [
+          {
+            "system": "http://clinic.example.org/mrn",
+            "value": "24680"
+          },
+          {
+            "system": "http://hl7.org/fhir/sid/us-ssn",
+            "value": "246-80-1357"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Garcia",
+            "given": ["Maria"]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1974-09-21",
+        "address": [
+          {
+            "use": "home",
+            "line": ["789 Palm Blvd"],
+            "city": "Miami",
+            "state": "FL",
+            "postalCode": "33101",
+            "country": "US"
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient?identifier=http://clinic.example.org/mrn|24680"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:16d36ec2-4dd3-46e6-b8a1-f39c4808df6a",
+      "resource": {
+        "resourceType": "Patient",
+        "identifier": [
+          {
+            "system": "http://clinic.example.org/mrn",
+            "value": "13579"
+          },
+          {
+            "system": "http://hl7.org/fhir/sid/us-ssn",
+            "value": "135-79-2468"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Chen",
+            "given": ["Robert"]
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1992-11-08",
+        "address": [
+          {
+            "use": "home",
+            "line": ["321 Cedar St"],
+            "city": "Seattle",
+            "state": "WA",
+            "postalCode": "98101",
+            "country": "US"
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient?identifier=http://clinic.example.org/mrn|13579"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:1b4ec5a0-9682-4bc6-83be-cf9114ee3d8b",
+      "resource": {
+        "resourceType": "Condition",
+        "subject": {
+          "reference": "urn:uuid:0f5d0fb6-0ca2-4c0d-9d0c-f1c6716d41ab"
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "59621000",
+              "display": "Essential hypertension"
+            },
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10",
+              "code": "I10",
+              "display": "Essential (primary) hypertension"
+            }
+          ],
+          "text": "Essential hypertension"
+        },
+        "onsetDateTime": "2018-07-10"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Condition?subject=urn:uuid:0f5d0fb6-0ca2-4c0d-9d0c-f1c6716d41ab&code=http://snomed.info/sct|59621000"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:19c2d70d-df2c-4c26-a56a-d0646ac0d2ee",
+      "resource": {
+        "resourceType": "Observation",
+        "status": "final",
+        "subject": {
+          "reference": "urn:uuid:0f5d0fb6-0ca2-4c0d-9d0c-f1c6716d41ab"
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "29463-7",
+              "display": "Body weight"
+            },
+            {
+              "system": "http://snomed.info/sct",
+              "code": "27113001",
+              "display": "Body weight"
+            }
+          ],
+          "text": "Body weight"
+        },
+        "valueQuantity": {
+          "value": 82.4,
+          "unit": "kg",
+          "system": "http://unitsofmeasure.org",
+          "code": "kg"
+        },
+        "effectiveDateTime": "2024-02-12T14:15:00Z"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Observation?subject=urn:uuid:0f5d0fb6-0ca2-4c0d-9d0c-f1c6716d41ab&code=http://loinc.org|29463-7&date=2024-02-12T14:15:00Z"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:2f3c3984-1d39-4ae1-a0d0-0558a12954ea",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "status": "active",
+        "intent": "order",
+        "subject": {
+          "reference": "urn:uuid:0f5d0fb6-0ca2-4c0d-9d0c-f1c6716d41ab"
+        },
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "314076",
+              "display": "lisinopril 10 MG Oral Tablet"
+            },
+            {
+              "system": "http://hl7.org/fhir/sid/ndc",
+              "code": "0093-1049-01",
+              "display": "Lisinopril 10 MG Oral Tablet"
+            }
+          ],
+          "text": "Lisinopril 10mg tablet"
+        },
+        "dosageInstruction": [
+          {
+            "text": "Take one tablet by mouth once daily"
+          }
+        ],
+        "authoredOn": "2024-02-12"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest?subject=urn:uuid:0f5d0fb6-0ca2-4c0d-9d0c-f1c6716d41ab&medication.code=http://www.nlm.nih.gov/research/umls/rxnorm|314076&authoredon=2024-02-12"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:5afedbf9-825c-4568-a10c-8b3fd4b9574c",
+      "resource": {
+        "resourceType": "AllergyIntolerance",
+        "clinicalStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+              "code": "active",
+              "display": "Active"
+            }
+          ]
+        },
+        "verificationStatus": {
+          "coding": [
+            {
+              "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification",
+              "code": "confirmed",
+              "display": "Confirmed"
+            }
+          ]
+        },
+        "patient": {
+          "reference": "urn:uuid:16d36ec2-4dd3-46e6-b8a1-f39c4808df6a"
+        },
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "91936005",
+              "display": "Allergy to penicillin"
+            },
+            {
+              "system": "http://hl7.org/fhir/sid/icd-10",
+              "code": "Z88.0",
+              "display": "Allergy status to penicillin"
+            }
+          ],
+          "text": "Penicillin allergy"
+        },
+        "type": "allergy",
+        "category": [
+          "medication"
+        ],
+        "criticality": "low",
+        "onsetDateTime": "2008-04-19"
+      },
+      "request": {
+        "method": "PUT",
+        "url": "AllergyIntolerance?patient=urn:uuid:16d36ec2-4dd3-46e6-b8a1-f39c4808df6a&code=http://snomed.info/sct|91936005"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:2417c9fe-d74a-44d8-948d-bf8ce7a7812d",
+      "resource": {
+        "resourceType": "Encounter",
+        "status": "finished",
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB",
+          "display": "ambulatory"
+        },
+        "subject": {
+          "reference": "urn:uuid:16d36ec2-4dd3-46e6-b8a1-f39c4808df6a"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "185389009",
+                "display": "Follow-up visit"
+              }
+            ]
+          }
+        ],
+        "period": {
+          "start": "2024-02-15T09:30:00Z",
+          "end": "2024-02-15T10:00:00Z"
+        },
+        "identifier": [
+          {
+            "system": "http://clinic.example.org/encounters",
+            "value": "ENC-24601"
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Encounter?subject=urn:uuid:16d36ec2-4dd3-46e6-b8a1-f39c4808df6a&identifier=http://clinic.example.org/encounters|ENC-24601"
+      }
+    }
+  ]
+}

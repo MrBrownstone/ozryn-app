@@ -3,10 +3,14 @@
 import { Home, Users, Calendar, FileText, Settings, LogOut, Activity, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { medplum } from "@/lib/medplum"
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
+  const router = useRouter()
 
   const menuItems = [
     { icon: Home, label: "Dashboard", href: "#" },
@@ -15,6 +19,21 @@ export function Sidebar() {
     { icon: Calendar, label: "Appointments", href: "#" },
     { icon: FileText, label: "Care Plans", href: "#" },
   ]
+
+  const handleLogout = async () => {
+    setSigningOut(true)
+
+    try {
+      await medplum.signOut()
+    } catch (error) {
+      console.warn("Medplum sign out failed, clearing local session only.", error)
+      medplum.clear()
+    } finally {
+      router.replace("/login")
+      router.refresh()
+      setSigningOut(false)
+    }
+  }
 
   return (
     <aside
@@ -53,9 +72,14 @@ export function Sidebar() {
           <Settings className="w-5 h-5 shrink-0" />
           {!collapsed && <span className="text-sm font-medium">Settings</span>}
         </Button>
-        <Button variant="ghost" className="w-full justify-start gap-3 px-4 h-10">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-3 px-4 h-10"
+          onClick={handleLogout}
+          disabled={signingOut}
+        >
           <LogOut className="w-5 h-5 shrink-0" />
-          {!collapsed && <span className="text-sm font-medium">Logout</span>}
+          {!collapsed && <span className="text-sm font-medium">{signingOut ? "Logging out..." : "Logout"}</span>}
         </Button>
       </div>
     </aside>
