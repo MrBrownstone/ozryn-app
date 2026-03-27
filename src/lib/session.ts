@@ -1,4 +1,4 @@
-import { medplum } from "@/lib/medplum"
+import { getMedplum } from "@/lib/medplum"
 
 export interface UserContext {
   profileRef: string           // e.g., "Practitioner/abc"
@@ -6,6 +6,7 @@ export interface UserContext {
 }
 
 export async function getUserContext(): Promise<UserContext> {
+  const medplum = getMedplum()
   // Ensure we’re authenticated; processCode already stored tokens.
   const me = await medplum.get("auth/me") as any
 

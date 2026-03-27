@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "slug": "rendal",
+    "displayName": "Rendal",
+    "status": "active",
+    "bootstrapStatus": "ready",
+    "domains": [
+      "rendal.localhost:3000",
+      "rendal.ozryn.app"
+    ],
+    "canonicalDomain": "rendal.localhost:3000",
+    "medplumBaseUrl": "http://localhost:8103",
+    "medplumProjectId": "project-id",
+    "medplumOrganizationId": null,
+    "medplumClientId": "client-id",
+    "createdAt": "2026-03-26T00:00:00.000Z",
+    "updatedAt": "2026-03-26T00:00:00.000Z",
+    "manualSteps": []
+  }
+]

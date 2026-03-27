@@ -61,6 +61,25 @@ The goal is to start that way.
 - [x] Strategic auth direction chosen: **external IdP + Medplum project-scoped token bridging**
 - [x] Strategic RBAC direction chosen: minimal roles for MVP
 - [x] Strategic provisioning direction chosen: no direct SQL hacks, use Medplum Admin/FHIR APIs only
+- [x] Manual two-tenant local bootstrap validated with separate Medplum projects, separate OZRYN `ClientApplication` records, and distinct imported FHIR bundles
+- [x] Local tenant registry and tenant-aware Medplum runtime bootstrap implemented for the shared OZRYN app instance
+
+### Local runtime milestone as of 2026-03-26
+
+The current local runtime can now authenticate different tenant admins against different tenant-specific Medplum `ClientApplication` ids without editing `.env.local` between logins.
+
+What is implemented now:
+
+- OZRYN resolves tenant runtime config from the local tenant registry before Medplum client bootstrap
+- local development supports explicit tenant selection on the login screen for a shared `localhost` app instance
+- browser Medplum session state is namespaced per tenant to avoid one tenant login overwriting another tenant's saved Medplum session
+- the app shell surfaces the active tenant name in the runtime UI
+
+What this milestone does not change:
+
+- runtime auth is still browser-direct through Medplum for local MVP
+- external IdP and deterministic cross-tenant identity linking are still future-phase work
+- production-grade hostname/domain routing still needs to be completed beyond the local selector/cookie path
 
 ### Assumed current state
 
@@ -351,7 +370,7 @@ Turn existing experimentation into a deliberate baseline that Codex can build on
 - [ ] Create/update canonical docs folder for OZRYN architecture
 - [ ] Define repository structure
 - [ ] Define environment strategy: local / staging / prod
-- [ ] Define tenant resolution approach in app
+- [x] Define tenant resolution approach in app
 - [ ] Document external IdP + Medplum token bridging flow
 - [ ] Document onboarding flow for new customer org
 - [ ] Document minimum RBAC matrix
@@ -375,14 +394,15 @@ Make tenancy real before building business features.
 - tenant-aware OZRYN app foundation
 - Medplum project-per-tenant model operationally defined
 - onboarding flow specified
+- local shared-app tenant switching works without env var swapping
 
 ## Tasks
-- [ ] Design tenant identification strategy:
+- [x] Design tenant identification strategy:
   - subdomain
   - custom domain
   - fallback local dev tenant selector
-- [ ] Define tenant config source of truth
-- [ ] Define mapping from tenant to Medplum project credentials/config
+- [x] Define tenant config source of truth
+- [x] Define mapping from tenant to Medplum project credentials/config
 - [ ] Design automated customer provisioning flow:
   - create Medplum project
   - create Organization
@@ -443,7 +463,7 @@ Stand up the first usable clinical OZRYN slice on top of Medplum.
 
 ## Tasks
 - [ ] Build app shell in Next.js on Vercel
-- [ ] Implement tenant-aware session bootstrapping
+- [x] Implement tenant-aware session bootstrapping
 - [ ] Implement core screens for MVP:
   - patient list
   - patient detail

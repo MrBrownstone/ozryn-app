@@ -28,8 +28,12 @@ export function normalizeDomain(value: string): string {
   return value.trim().toLowerCase()
 }
 
+export function getLocalAppPort(): string {
+  return process.env.PORT?.trim() || '3000'
+}
+
 export function getLocalTenantHost(slug: string): string {
-  return `${slug}.localhost:3000`
+  return `${slug}.localhost:${getLocalAppPort()}`
 }
 
 export function getProductionTenantHost(slug: string): string {

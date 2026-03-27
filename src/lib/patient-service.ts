@@ -1,5 +1,6 @@
-import { medplum } from "./medplum"
 import type { Bundle, Patient, Observation, CarePlan } from "@medplum/fhirtypes"
+
+import { getMedplum } from "./medplum"
 
 function bundleToResources<T = any>(bundle: Bundle | undefined): T[] {
   if (!bundle?.entry) return []
@@ -93,6 +94,7 @@ function formatLastUpdated(lastUpdated: string | undefined): string {
 }
 
 export async function searchPatientsForList(query: string): Promise<UiPatientListItem[]> {
+  const medplum = getMedplum()
   const params: Record<string, string> = {
     _summary: "true",
     _count: "25",
@@ -123,6 +125,7 @@ export async function searchPatientsForList(query: string): Promise<UiPatientLis
 }
 
 export async function getPatientById(id: string): Promise<Patient | null> {
+  const medplum = getMedplum()
   try {
     return (await medplum.readResource("Patient", id)) as Patient
   } catch {
@@ -161,6 +164,7 @@ export async function getRecentObservations(
   patientId: string,
   count = 4,
 ): Promise<UiObservationItem[]> {
+  const medplum = getMedplum()
   const bundle = (await medplum.search("Observation", {
     subject: `Patient/${patientId}`,
     _sort: "-date",
@@ -239,6 +243,7 @@ export async function getCarePlanItems(
   patientId: string,
   count = 4,
 ): Promise<UiCarePlanItem[]> {
+  const medplum = getMedplum()
   const bundle = (await medplum.search("CarePlan", {
     subject: `Patient/${patientId}`,
     _sort: "-period-start",

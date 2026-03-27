@@ -3,29 +3,50 @@
 This file tracks implemented work in `ozryn-app` only.
 It excludes broader OZRYN platform items from `docs/roadmap.md` unless they are visibly implemented in this app repository.
 
-## Roadmap alignment as of 2026-03-09
+## Roadmap alignment as of 2026-03-26
 
 Completed or substantially completed:
 
 - Phase 3 app shell baseline in Next.js: dashboard layout, sidebar, top navigation, and staff-facing navigation structure.
-- Local app to Medplum integration: environment-configured Medplum client and app-wide provider wiring.
+- Local app to Medplum integration: tenant-aware Medplum client bootstrap, app-wide provider wiring, and tenant-scoped browser storage.
 - Core read-only clinical views backed by FHIR queries: patient list search, recent observations, and care plan summaries.
-- Auth baseline for the app: Medplum-backed sign-in screen plus unauthenticated redirect handling.
+- Auth baseline for the app: Medplum-backed sign-in screen, tenant selection for local shared-app development, and unauthenticated redirect handling.
+- Local tenant registry-backed runtime resolution for the shared OZRYN app instance.
 
 Partially completed:
 
 - Patient detail UI now reads the selected `Patient` resource for core demographics, but richer longitudinal detail and editing flows are still incomplete.
-- Session/profile helper utilities exist for Medplum profile binding and organization lookup, but tenant-aware session bootstrapping is not implemented end-to-end.
+- Session/profile helper utilities exist for Medplum profile binding and organization lookup, but server-managed app sessions are not implemented end-to-end.
 - Runtime auth remains browser-direct through the Medplum SDK; tenant-aware server-side auth is still a target architecture, not current implementation.
+- Hostname-based production tenant routing is still incomplete beyond the local selector/cookie fallback path.
 
 Not counted as done for `ozryn-app`:
 
-- Tenant resolution and tenant-aware routing
 - External IdP integration and deterministic identity linking
 - Encounter timeline
 - DocumentReference/Binary upload flows
 - AWS/S3 production deployment work
 - Inference, extraction, and review workflows
+
+## 2026-03-26
+
+### Added
+
+- Tenant runtime resolution from the local tenant registry, including public tenant runtime APIs for login/bootstrap flows.
+- Tenant-scoped Medplum browser storage so separate tenant sessions do not overwrite each other on the shared local OZRYN app origin.
+- Tenant selection on the login page for local multi-tenant development without swapping `NEXT_PUBLIC_MEDPLUM_CLIENT_ID` between users.
+- Active tenant context surfaced in the UI shell.
+- A populated `data/tenants.local.example.json` example showing the expected registry shape.
+
+### Changed
+
+- Replaced the global single-tenant Medplum runtime bootstrap with tenant-aware bootstrap resolved before app provider initialization.
+- Updated the root layout/provider flow to resolve tenant config first and then attach the matching Medplum client.
+- Converted Medplum-backed service helpers to read the currently configured tenant client instead of importing a fixed singleton.
+
+### Docs
+
+- Recorded the manual two-tenant local validation milestone and the new shared-app multitenant runtime in `docs/roadmap.md`.
 
 ## 2026-03-03
 

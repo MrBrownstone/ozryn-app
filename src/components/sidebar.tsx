@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { medplum } from "@/lib/medplum"
+import { getMedplum } from "@/lib/medplum"
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
@@ -22,6 +22,7 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     setSigningOut(true)
+    const medplum = getMedplum()
 
     try {
       await medplum.signOut()

@@ -48,4 +48,3 @@ export async function finalizeMedplumSession(medplum: any) {
   return true
 }
 
-

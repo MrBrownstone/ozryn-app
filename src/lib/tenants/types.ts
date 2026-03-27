@@ -18,6 +18,15 @@ export interface TenantRecord {
   manualSteps: string[]
 }
 
+export interface TenantRuntimeConfig {
+  slug: string
+  displayName: string
+  canonicalDomain: string
+  domains: string[]
+  medplumBaseUrl: string
+  medplumClientId: string
+}
+
 export interface CreateTenantInput {
   slug: string
   displayName: string
