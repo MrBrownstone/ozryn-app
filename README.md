@@ -70,6 +70,12 @@ FHIR also brings the adult responsibilities:
 - PKCE flows
 - There is a working OAuth demo (`medplum-oauth-demo.html`)
 
+### Architecture docs
+- Multitenancy manual: `docs/architecture/multitenancy-manual.md`
+- Tenant model: `docs/architecture/tenant-model.md`
+- Provisioning flow: `docs/architecture/provisioning-flow.md`
+- Local Medplum runtime notes: `docs/architecture/local-medplum-dev-notes.md`
+
 ---
 
 ## Repository status (where we are)
