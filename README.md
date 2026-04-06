@@ -71,6 +71,7 @@ FHIR also brings the adult responsibilities:
 - There is a working OAuth demo (`medplum-oauth-demo.html`)
 
 ### Architecture docs
+- Admin control plane: `docs/architecture/admin-control-plane.md`
 - Multitenancy manual: `docs/architecture/multitenancy-manual.md`
 - Tenant model: `docs/architecture/tenant-model.md`
 - Provisioning flow: `docs/architecture/provisioning-flow.md`

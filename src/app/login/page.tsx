@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { AlertCircle } from "lucide-react"
 import Image from "next/image"
+import { isAdminHost } from "@/lib/admin/control-plane"
 import { createTenantMedplum } from "@/lib/medplum"
 import type { TenantRuntimeConfig } from "@/lib/tenants/types"
 
@@ -51,6 +52,7 @@ export default function LoginPage() {
   const requestedTenantSlug = searchParams.get("tenant")?.trim().toLowerCase() ?? ""
   const selectedTenant =
     tenants.find((tenant) => tenant.slug === selectedTenantSlug) ?? null
+  const adminControlPlane = browserHost ? isAdminHost(browserHost) : false
   const hostLockedTenant =
     browserHost && selectedTenant && hostMatchesTenant(browserHost, selectedTenant)
       ? selectedTenant
@@ -69,6 +71,13 @@ export default function LoginPage() {
     let cancelled = false
 
     async function loadTenants() {
+      if (browserHost && isAdminHost(browserHost)) {
+        setTenants([])
+        setSelectedTenantSlug("")
+        setIsLoadingTenants(false)
+        return
+      }
+
       setIsLoadingTenants(true)
 
       try {
@@ -118,7 +127,36 @@ export default function LoginPage() {
     return () => {
       cancelled = true
     }
-  }, [requestedTenantSlug])
+  }, [browserHost, requestedTenantSlug])
+
+  if (adminControlPlane) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="flex flex-col items-center mb-8">
+            <Image src="ozryn.svg" alt="OZRYN Logo" width={200} height={200} />
+            <p className="text-sm text-muted-foreground text-center">Operator Control Plane</p>
+          </div>
+
+          <Card className="p-6 md:p-8 border border-border/40 shadow-sm text-center space-y-4">
+            <div className="space-y-2">
+              <h1 className="text-xl font-semibold text-foreground">Admin Login</h1>
+              <p className="text-sm text-muted-foreground">
+                This host is reserved for platform operators. Tenant staff should sign
+                in on their tenant host instead.
+              </p>
+            </div>
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Continue to Admin Sign In
+            </Link>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   const getTenantLoginUrl = (tenant: TenantRuntimeConfig): string => {
     if (!browserOrigin) {

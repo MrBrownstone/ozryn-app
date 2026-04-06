@@ -8,6 +8,7 @@ This document freezes the following decisions:
 
 - One customer organization equals one Medplum `Project`
 - Each Medplum `Project` contains one root `Organization`
+- The OZRYN operator control plane is not a tenant
 - Cross-tenant PHI isolation is enforced by Medplum `Project` boundaries
 - All human users are project-scoped for MVP
 - `ozryn.app` is the production wildcard base domain
@@ -22,6 +23,7 @@ This document freezes the following decisions:
 4. A tenant slug is stable, unique, lowercase, and URL-safe.
 5. Runtime application code must never use super-admin credentials.
 6. Tenant lookup must happen before Medplum client bootstrap.
+7. Admin/control-plane hosts must short-circuit tenant resolution and never resolve to a tenant record.
 
 ## Tenant Record
 
@@ -82,11 +84,13 @@ This is valid:
 
 Production supports both:
 
+- one dedicated admin control-plane host: `admin.ozryn.app`
 - Wildcard tenant subdomains under `ozryn.app`
 - Exact-match custom domains owned by customers
 
 Examples:
 
+- `admin.ozryn.app`
 - `princeton.ozryn.app`
 - `jhopkins.ozryn.app`
 - `ehr.princetonhospital.org`
@@ -97,6 +101,7 @@ Local development does not require `ozryn.app`.
 
 Preferred local host patterns:
 
+- `admin.localhost:3000`
 - `princeton.localhost:3000`
 - `jhopkins.localhost:3000`
 
@@ -110,11 +115,12 @@ The host-based path is preferred because it mirrors production tenant resolution
 
 Incoming requests resolve tenants in this order:
 
-1. Exact custom domain match
-2. Exact local host match such as `tenant.localhost`
-3. Production wildcard subdomain match under `*.ozryn.app`
-4. Explicit local development override such as `?tenant=princeton`
-5. No match -> show tenant-not-found or platform landing page
+1. Admin control-plane host such as `admin.localhost` or `admin.ozryn.app` -> no tenant resolution
+2. Exact custom domain match
+3. Exact local host match such as `tenant.localhost`
+4. Production wildcard subdomain match under `*.ozryn.app`
+5. Explicit local development override such as `?tenant=princeton`
+6. No match -> show tenant-not-found or platform landing page
 
 ## Canonical Domain Policy
 
@@ -137,6 +143,8 @@ These values must not be assignable as tenant slugs:
 - `admin`
 - `api`
 - `docs`
+
+The `admin` reservation is intentional because it belongs to the OZRYN control plane, not to a customer tenant.
 
 ## Medplum Mapping Rules
 
@@ -193,3 +201,4 @@ This is a development convenience only. The long-term production source of truth
 - [Platforms Guide: Multi-Tenant Platforms Quickstart](https://platforms.guide/platforms/docs/multi-tenant-platforms/quickstart)
 - [Vercel Platforms reference repository](https://github.com/vercel/platforms)
 - [Medplum Projects](https://www.medplum.com/docs/access/projects)
+- `docs/architecture/admin-control-plane.md`

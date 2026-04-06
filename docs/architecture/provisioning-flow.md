@@ -9,7 +9,9 @@ This flow covers:
 - Medplum project creation
 - Root organization creation
 - Tenant app client creation
-- First tenant admin invite
+- Primary tenant admin invite
+- Optional initial user list invite
+- PractitionerRole linkage to tenant Organization
 - Tenant registry persistence
 
 This flow does not cover:
@@ -44,7 +46,8 @@ If this server-action-first rule starts creating more complexity than it removes
 - OZRYN operator: human initiating tenant creation
 - OZRYN provisioning service: server-side route or job that performs setup
 - Medplum super-admin provisioning client: server-only `ClientApplication`
-- Tenant admin: first invited human admin for the tenant
+- OZRYN admin control plane: dedicated non-tenant host for operator workflows
+- Tenant admin: primary invited human admin for the tenant
 
 ## Inputs
 
@@ -52,9 +55,21 @@ If this server-action-first rule starts creating more complexity than it removes
 type ProvisionTenantInput = {
   slug: string;
   displayName: string;
-  firstAdminFirstName: string;
-  firstAdminLastName: string;
-  firstAdminEmail: string;
+  primaryAdmin: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password?: string;
+    sendEmail?: boolean;
+  };
+  initialUsers?: Array<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: 'TenantAdmin' | 'Staff';
+    password?: string;
+    sendEmail?: boolean;
+  }>;
   customDomains?: string[];
 };
 ```
@@ -79,7 +94,8 @@ Validate before any Medplum write:
 
 - slug format and reserved words
 - display name present
-- admin email present
+- primary admin email present
+- bootstrap users use unique email addresses
 - custom domains normalized and unique
 
 ### Step 2: Create Medplum project
@@ -133,7 +149,7 @@ This client is used by the tenant-facing login flow and must be stored in the te
 Required properties:
 
 - name tied to tenant identity
-- redirect URI aligned with the tenant's canonical domain
+- redirect URI aligned with the tenant login host for the current environment
 - access policy appropriate for the web app
 
 Important:
@@ -141,20 +157,33 @@ Important:
 - this is not the same as the provisioning client
 - each tenant gets its own Medplum app client
 
-### Step 6: Invite the first tenant admin
+### Step 6: Invite bootstrap users
 
-Invite the first human admin using Medplum's invite endpoint.
+Invite the primary tenant admin and any optional initial staff/admin users using Medplum's invite endpoint.
 
 Rules:
 
 - resource type is `Practitioner`
+- human bootstrap users are email-first for this phase
 - user scope is `project`
-- membership is admin-enabled for the tenant project
-- membership includes the initial `TenantAdmin` access policy
+- the primary admin is admin-enabled for the tenant project
+- additional `TenantAdmin` users are admin-enabled for the tenant project
+- `Staff` users receive the tenant `Staff` access policy when it exists
+- bootstrap invites may set `password` for local/dev flows or rely on invite/reset flows when email delivery is configured
 
-This ensures the first tenant admin can sign in and operate only inside their own project.
+This ensures the primary tenant admin can sign in and operate only inside their own project, while additional staff remain tenant-scoped as well.
 
-### Step 7: Persist tenant registry entry
+### Step 7: Create PractitionerRole links
+
+For invited human staff/admin users, create `PractitionerRole` resources linking the invited `Practitioner` profile to the tenant root `Organization`.
+
+Why:
+
+- keeps organization affiliation explicit
+- aligns with OZRYN's current organization inference helper
+- avoids leaving bootstrap users unattached to the tenant organization model
+
+### Step 8: Persist tenant registry entry
 
 After Medplum resources are created, write the resulting tenant record to the OZRYN tenant registry.
 
@@ -177,14 +206,16 @@ Do not store:
 - super-admin credentials
 - bearer tokens
 
-### Step 8: Verify tenant bootstrap
+### Step 9: Verify tenant bootstrap
 
 Run post-create checks:
 
 - tenant resolves by slug/domain
 - Medplum client id is present
 - root organization exists
-- first admin membership exists
+- primary admin membership exists
+- optional initial user memberships exist when requested
+- invited practitioners are linked to the tenant organization with `PractitionerRole` when automation succeeded
 - login target points to the tenant client
 
 ## Canonical Domain Rules
@@ -213,6 +244,7 @@ Rules:
 - provisioning routes must be authenticated and server-only
 - provisioning credentials must never be exposed to the browser
 - the runtime OZRYN app must not hold super-admin capability
+- the admin control plane may exist as a separate privileged surface, but must stay isolated from tenant runtime
 - all tenant users remain project-scoped in MVP
 - cross-tenant access tests are mandatory before feature rollout
 
@@ -224,17 +256,20 @@ Rules:
 This separation keeps super-admin capability out of normal user sessions.
 
 For current local runtime/auth realities and debugging notes, see `docs/architecture/local-medplum-dev-notes.md`.
+For the operator host/auth model, see `docs/architecture/admin-control-plane.md`.
 
 ## Sequence Diagram
 
 ```mermaid
 sequenceDiagram
   participant Operator as OZRYN Operator
+  participant AdminUI as OZRYN Admin Control Plane
   participant Service as Provisioning Service
   participant Medplum as Medplum API
   participant Registry as Tenant Registry
 
-  Operator->>Service: Submit tenant input
+  Operator->>AdminUI: Sign in and submit tenant input
+  AdminUI->>Service: Authorized tenant bootstrap request
   Service->>Medplum: Project/$init
   Medplum-->>Service: Project
   Service->>Medplum: Create Organization
@@ -243,8 +278,10 @@ sequenceDiagram
   Medplum-->>Service: AccessPolicies
   Service->>Medplum: Create ClientApplication
   Medplum-->>Service: ClientApplication
-  Service->>Medplum: Invite first TenantAdmin
-  Medplum-->>Service: ProjectMembership
+  Service->>Medplum: Invite primary admin and initial users
+  Medplum-->>Service: ProjectMemberships
+  Service->>Medplum: Create PractitionerRoles
+  Medplum-->>Service: PractitionerRoles
   Service->>Registry: Persist tenant record
   Registry-->>Service: Stored
   Service-->>Operator: Provisioning result

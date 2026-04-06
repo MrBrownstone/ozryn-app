@@ -29,6 +29,9 @@ The Medplum `Project` is the hard isolation boundary.
 The `Organization` is the business/domain model for the customer inside that project.
 Those are not the same thing.
 
+The OZRYN operator control plane sits outside that tenant model.
+The system admin is not a customer tenant and should never resolve through the tenant registry.
+
 ## How OZRYN Maps To Medplum
 
 | OZRYN concept | Medplum concept | What it means in practice |
@@ -39,6 +42,7 @@ Those are not the same thing.
 | Tenant admin or staff user | `User` + profile resource + `ProjectMembership` | Human access is bound to the tenant project through membership. |
 | Tenant role model | `AccessPolicy` | Used for authorization within a tenant project, not for cross-customer isolation. |
 | Provisioning plane | Super-admin or provisioning `ClientApplication` | Server-only client used to create projects, clients, invites, and bootstrap resources. |
+| Admin control plane | Dedicated operator host and session | Separate OZRYN surface for provisioning and tenant management, not a tenant workspace. |
 | Shared non-PHI catalogs later | Linked project or separate shared project | Potential future pattern for terminology or templates, never for customer PHI. |
 
 ## The Important Medplum Distinction
@@ -97,16 +101,26 @@ That split is intentional. The runtime app needs enough information to bootstrap
 
 ## Current Runtime Flow
 
+### Control plane vs tenant runtime
+
+OZRYN now has two different surfaces:
+
+- tenant runtime on tenant hosts
+- operator control plane on `admin.localhost` / `admin.ozryn.app`
+
+The control plane does not resolve a tenant and must not share tenant runtime auth assumptions.
+
 ### 1. Tenant resolution happens before Medplum bootstrap
 
 The root layout calls `resolveTenantRuntimeForRequest()` before creating the Medplum client.
 
 Current implementation order in `src/lib/tenants/runtime.server.ts` is:
 
-1. exact configured host/domain match
-2. derived slug from `*.localhost` or `*.ozryn.app`
-3. tenant cookie override (`ozryn-tenant`)
-4. fallback single-tenant env config only when no registry tenants exist
+1. admin host short-circuit -> no tenant
+2. exact configured host/domain match
+3. derived slug from `*.localhost` or `*.ozryn.app`
+4. tenant cookie override (`ozryn-tenant`)
+5. fallback single-tenant env config only when no registry tenants exist
 
 This is important because the app chooses the Medplum client id and Medplum base URL from the resolved tenant before React providers are initialized.
 
@@ -196,6 +210,8 @@ The real guard is:
 
 Today, the following parts are already real:
 
+- a dedicated admin/control-plane host exists outside tenant routing
+- admin login into the OZRYN control plane is separate from tenant login
 - a shared OZRYN app instance can resolve different tenants at runtime
 - each tenant can point to a different Medplum project/client pair
 - the login screen can switch between tenants without env-var swapping
@@ -325,6 +341,7 @@ If someone is onboarding to this part of the codebase, read in this order:
 When changing this architecture, preserve these invariants unless there is an explicit redesign:
 
 - do not collapse multiple customer tenants into one Medplum project
+- do not model the platform operator as a customer tenant
 - do not treat `Organization` as the top-level cross-customer boundary
 - do not expose provisioning credentials to the browser
 - do not store client secrets in the tenant registry
@@ -344,8 +361,10 @@ When changing this architecture, preserve these invariants unless there is an ex
 - `src/app/api/tenant-runtime/route.ts`
 - `src/app/api/tenant-select/route.ts`
 - `src/app/api/admin/tenants/route.ts`
+- `src/app/api/admin/session/route.ts`
 - `src/lib/provisioning/create-tenant.ts`
 - `src/lib/provisioning/medplum.server.ts`
+- `docs/architecture/admin-control-plane.md`
 - `docs/architecture/tenant-model.md`
 - `docs/architecture/provisioning-flow.md`
 - `docs/architecture/local-medplum-dev-notes.md`

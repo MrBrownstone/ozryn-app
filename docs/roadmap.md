@@ -81,6 +81,24 @@ What this milestone does not change:
 - external IdP and deterministic cross-tenant identity linking are still future-phase work
 - production-grade hostname/domain routing still needs to be completed beyond the local selector/cookie path
 
+### Admin control-plane milestone as of 2026-03-31
+
+The app now includes a dedicated local operator control plane separate from tenant runtime.
+
+What is implemented now:
+
+- `admin.localhost` is treated as a reserved non-tenant host
+- OZRYN exposes a separate admin login and tenant provisioning UI for the platform operator
+- tenant provisioning accepts one required primary admin plus an optional initial user list
+- tenant bootstrap is standardized on invite-based, email-first human onboarding
+- bootstrap users are represented as `Practitioner` profiles and linked back to the tenant `Organization` with `PractitionerRole` when automation succeeds
+
+What this milestone still does not change:
+
+- local admin login is Medplum-backed and still separate from any future external IdP layer
+- provisioning credentials remain server-only and separate from operator login
+- domain automation, patient bootstrap, and self-service signup remain out of scope
+
 ### Assumed current state
 
 These are treated as design constraints unless explicitly revised:
@@ -236,6 +254,7 @@ Minimal roles only:
 
 - no universal runtime super-admin user for normal operations
 - bootstrap/admin automation may exist outside normal runtime flows
+- a separate operator control plane is allowed when it stays outside tenant runtime and keeps privileged Medplum writes server-side
 - invites and role assignment should be tenant-scoped
 
 ---

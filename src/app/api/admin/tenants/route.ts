@@ -1,24 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { isAdminHost } from '@/lib/admin/control-plane'
+import { getAdminSessionFromRequest } from '@/lib/admin/session.server'
 import { createTenant } from '@/lib/provisioning/create-tenant'
 import { findTenantBySlug, readTenantRegistry } from '@/lib/tenants/registry.server'
 import { normalizeSlug } from '@/lib/tenants/slug'
 import type { CreateTenantInput } from '@/lib/tenants/types'
 
-function requireProvisioningKey(request: NextRequest): NextResponse | null {
+function hasProvisioningKey(request: NextRequest): boolean {
   const configuredKey = process.env.OZRYN_PROVISIONING_API_KEY?.trim()
   if (!configuredKey) {
-    return NextResponse.json(
-      {
-        error:
-          'Missing OZRYN_PROVISIONING_API_KEY. Set it before using the provisioning API.',
-      },
-      { status: 500 },
-    )
+    return false
   }
 
   const incomingKey = request.headers.get('x-ozryn-provisioning-key')?.trim()
-  if (!incomingKey || incomingKey !== configuredKey) {
+  return Boolean(incomingKey && incomingKey === configuredKey)
+}
+
+function requireProvisioningAccess(request: NextRequest): NextResponse | null {
+  if (hasProvisioningKey(request)) {
+    return null
+  }
+
+  const host =
+    request.headers.get('x-forwarded-host') ??
+    request.headers.get('host') ??
+    request.nextUrl.host
+
+  if (!isAdminHost(host)) {
+    return NextResponse.json({ error: 'Not found.' }, { status: 404 })
+  }
+
+  const session = getAdminSessionFromRequest(request)
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
   }
 
@@ -26,7 +40,7 @@ function requireProvisioningKey(request: NextRequest): NextResponse | null {
 }
 
 export async function GET(request: NextRequest) {
-  const authError = requireProvisioningKey(request)
+  const authError = requireProvisioningAccess(request)
   if (authError) {
     return authError
   }
@@ -36,7 +50,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authError = requireProvisioningKey(request)
+  const authError = requireProvisioningAccess(request)
   if (authError) {
     return authError
   }

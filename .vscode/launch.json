@@ -6,9 +6,10 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "dev"
-      ]
+      "runtimeArgs": [ "dev" ],
+      "env": {
+        "PORT": "3001"
+      }
     }
   ]
 }

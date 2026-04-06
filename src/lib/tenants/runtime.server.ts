@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { isAdminHost } from '@/lib/admin/control-plane'
 import { normalizeDomain, normalizeSlug } from '@/lib/tenants/slug'
 import { readTenantRegistry } from '@/lib/tenants/registry.server'
 import type { TenantRecord, TenantRuntimeConfig } from '@/lib/tenants/types'
@@ -101,6 +102,10 @@ export async function resolveTenantRuntimeForRequest(input: {
   host?: string | null
   tenantSlugOverride?: string | null
 }): Promise<TenantRuntimeConfig | null> {
+  if (isAdminHost(input.host)) {
+    return null
+  }
+
   const activeTenants = await readActiveTenants()
   const normalizedHost = normalizeHost(input.host)
 
