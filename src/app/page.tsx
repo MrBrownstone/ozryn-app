@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { TopNav } from "@/components/top-nav"
 import { PatientList } from "@/components/patient-list"
@@ -9,11 +9,39 @@ import { PatientDetail } from "@/components/patient-detail"
 import { ObservationPanel } from "@/components/observation-panel"
 import { CarePlanPanel } from "@/components/care-plan-panel"
 import { Card } from "@/components/ui/card"
+import { isAdminHost } from "@/lib/admin/control-plane"
 import { useTenantRuntime } from "@/lib/tenants/runtime-context"
 
 export default function Dashboard() {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null)
+  const [browserHost, setBrowserHost] = useState("")
   const tenant = useTenantRuntime()
+  const adminControlPlane = browserHost ? isAdminHost(browserHost) : false
+
+  useEffect(() => {
+    setBrowserHost(window.location.host)
+  }, [])
+
+  if (adminControlPlane) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="max-w-lg p-8 border-border/60 text-center space-y-4">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold text-foreground">OZRYN Control Plane</h1>
+            <p className="text-sm text-muted-foreground">
+              This host is reserved for platform operator workflows and tenant provisioning.
+            </p>
+          </div>
+          <Link
+            href="/admin"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Go to Admin Control Plane
+          </Link>
+        </Card>
+      </div>
+    )
+  }
 
   if (!tenant) {
     return (

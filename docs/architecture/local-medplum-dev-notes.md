@@ -34,6 +34,23 @@ The pragmatic path that successfully produced a tenant-shaped local setup was:
 
 This path is acceptable for local bootstrap even though it is not the final provisioning automation model.
 
+## Current Local Operator Path
+
+There is now a separate local operator control plane on `admin.localhost:3000`.
+
+Current local expectations:
+
+- tenant staff/admins still sign in on tenant hosts such as `rendal.localhost:3000`
+- the OZRYN operator signs in on `admin.localhost:3000`
+- local admin login uses a dedicated Medplum admin `ClientApplication`
+- local admin setup uses `.env.local` values:
+  - `MEDPLUM_ADMIN_CLIENT_ID`
+  - `OZRYN_ADMIN_ALLOWED_EMAILS`
+  - `OZRYN_ADMIN_SESSION_SECRET`
+- privileged Medplum writes still use the server-only provisioning client credentials
+
+The operator is not a tenant and is not stored in the tenant registry.
+
 ## Known Local Auth and Config Gotchas
 
 ### Browser bundle staleness
@@ -91,6 +108,9 @@ Expected OZRYN behavior after import:
 
 - `src/lib/medplum.ts`
 - `src/app/login/page.tsx`
+- `src/app/admin/page.tsx`
+- `src/app/api/admin/session/route.ts`
 - `docs/fhir-basics-bundle.json`
+- `docs/architecture/admin-control-plane.md`
 - `docs/architecture/provisioning-flow.md`
 - `docs/architecture/tenant-model.md`
