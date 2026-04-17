@@ -11,17 +11,18 @@ export async function GET(request: NextRequest) {
   const headerStore = await headers()
   const cookieStore = await cookies()
   const requestedSlug = request.nextUrl.searchParams.get('slug')
+  const host =
+    headerStore.get('x-forwarded-host') ??
+    headerStore.get('host') ??
+    request.nextUrl.host
 
   const currentTenant = await resolveTenantRuntimeForRequest({
-    host:
-      headerStore.get('x-forwarded-host') ??
-      headerStore.get('host') ??
-      request.nextUrl.host,
+    host,
     tenantSlugOverride:
       requestedSlug ?? cookieStore.get(TENANT_COOKIE_NAME)?.value ?? null,
   })
 
-  const tenants = await listTenantRuntimeConfigs()
+  const tenants = await listTenantRuntimeConfigs({ host })
 
   return NextResponse.json({
     currentTenant,

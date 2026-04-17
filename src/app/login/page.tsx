@@ -24,16 +24,7 @@ function normalizeHost(value: string): string {
 
 function hostMatchesTenant(host: string, tenant: TenantRuntimeConfig): boolean {
   const normalizedHost = normalizeHost(host)
-  const withoutPort = normalizedHost.split(":")[0]
-
-  if (tenant.domains.some((domain) => normalizeHost(domain) === normalizedHost)) {
-    return true
-  }
-
-  return (
-    withoutPort === `${tenant.slug}.localhost` ||
-    withoutPort === `${tenant.slug}.ozryn.app`
-  )
+  return normalizeHost(tenant.tenantHost) === normalizedHost
 }
 
 export default function LoginPage() {
@@ -112,7 +103,7 @@ export default function LoginPage() {
         if (!cancelled) {
           setError(
             err?.message ||
-              "Could not load tenants. Add tenant mappings to data/tenants.local.json.",
+              "Could not load tenants from the database.",
           )
         }
       } finally {
@@ -160,23 +151,15 @@ export default function LoginPage() {
 
   const getTenantLoginUrl = (tenant: TenantRuntimeConfig): string => {
     if (!browserOrigin) {
-      return `/login?tenant=${encodeURIComponent(tenant.slug)}`
+      return `http://${tenant.tenantHost}/login`
     }
 
     const current = new URL(browserOrigin)
-    const portSuffix = current.port ? `:${current.port}` : ""
-    const localTenantHost =
-      tenant.domains.find(
-        (domain) => normalizeHost(domain) === `${tenant.slug}.localhost${portSuffix}`,
-      ) ??
-      tenant.domains.find((domain) => normalizeHost(domain).includes(".localhost")) ??
-      tenant.canonicalDomain
+    const protocol = normalizeHost(tenant.tenantHost).includes('localhost')
+      ? current.protocol
+      : 'https:'
 
-    const targetHost = normalizeHost(browserHost).includes("localhost")
-      ? localTenantHost
-      : tenant.canonicalDomain
-
-    return `${current.protocol}//${targetHost}/login`
+    return `${protocol}//${tenant.tenantHost}/login`
   }
 
   const getWorkspaceSwitcherUrl = (): string => {
@@ -387,7 +370,7 @@ export default function LoginPage() {
           </p>
           {!isLoadingTenants && tenants.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center mt-2">
-              Add tenant mappings to <code>data/tenants.local.json</code> to enable multi-tenant login on one local app instance.
+              Provision a tenant through the admin control plane to enable tenant-aware login.
             </p>
           ) : null}
         </div>

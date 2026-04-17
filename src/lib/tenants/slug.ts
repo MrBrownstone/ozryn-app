@@ -28,8 +28,16 @@ export function normalizeDomain(value: string): string {
   return value.trim().toLowerCase()
 }
 
+export function getPublicBaseDomain(): string {
+  return normalizeDomain(process.env.OZRYN_PUBLIC_BASE_DOMAIN?.trim() || 'ozryn.app')
+}
+
 export function getLocalAppPort(): string {
-  return process.env.PORT?.trim() || '3000'
+  return (
+    process.env.OZRYN_LOCAL_PORT?.trim() ||
+    process.env.PORT?.trim() ||
+    '3000'
+  )
 }
 
 export function getLocalTenantHost(slug: string): string {
@@ -37,5 +45,13 @@ export function getLocalTenantHost(slug: string): string {
 }
 
 export function getProductionTenantHost(slug: string): string {
-  return `${slug}.ozryn.app`
+  return `${slug}.${getPublicBaseDomain()}`
+}
+
+export function getTenantLoginRedirectUri(slug: string): string {
+  if (process.env.NODE_ENV === 'production') {
+    return `https://${getProductionTenantHost(slug)}/login`
+  }
+
+  return `http://${getLocalTenantHost(slug)}/login`
 }

@@ -32,7 +32,7 @@ export function getLocalAdminHost(): string {
 }
 
 export function getProductionAdminHost(): string {
-  return 'admin.ozryn.app'
+  return normalizeHost(process.env.OZRYN_ADMIN_HOST?.trim() || 'admin.ozryn.app')
 }
 
 export function isAdminHost(host: string | null | undefined): boolean {

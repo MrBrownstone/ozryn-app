@@ -54,7 +54,6 @@ export function AdminDashboard({
   const [tenants, setTenants] = useState<TenantRecord[]>(sortTenants(initialTenants))
   const [slug, setSlug] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [customDomains, setCustomDomains] = useState('')
   const [primaryAdmin, setPrimaryAdmin] = useState<BootstrapUserFormState>(
     emptyBootstrapUser('TenantAdmin'),
   )
@@ -106,10 +105,6 @@ export function AdminDashboard({
       const payload: CreateTenantInput = {
         slug,
         displayName,
-        customDomains: customDomains
-          .split(',')
-          .map((domain) => domain.trim())
-          .filter(Boolean),
         primaryAdmin: {
           firstName: primaryAdmin.firstName,
           lastName: primaryAdmin.lastName,
@@ -161,7 +156,6 @@ export function AdminDashboard({
 
       setSlug('')
       setDisplayName('')
-      setCustomDomains('')
       setPrimaryAdmin(emptyBootstrapUser('TenantAdmin'))
       setInitialUsers([])
     } catch (err) {
@@ -237,25 +231,6 @@ export function AdminDashboard({
                   disabled={isSubmitting}
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label
-                className="text-sm font-medium text-foreground"
-                htmlFor="tenant-custom-domains"
-              >
-                Custom Domains
-              </label>
-              <Input
-                id="tenant-custom-domains"
-                value={customDomains}
-                onChange={(event) => setCustomDomains(event.target.value)}
-                placeholder="ehr.princetonhospital.org, portal.princetonhospital.org"
-                disabled={isSubmitting}
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional, comma separated. Domain automation stays manual for now.
-              </p>
             </div>
 
             <div className="rounded-lg border border-border/60 p-4">
@@ -490,7 +465,9 @@ export function AdminDashboard({
                   <div className="mt-3 space-y-1 text-xs text-muted-foreground">
                     <p>Project: {tenant.medplumProjectId}</p>
                     <p>Client: {tenant.medplumClientId}</p>
-                    <p>Domains: {tenant.domains.join(', ')}</p>
+                    {tenant.lastProvisioningError ? (
+                      <p>Last issue: {tenant.lastProvisioningError}</p>
+                    ) : null}
                   </div>
                 </div>
               ))}

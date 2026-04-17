@@ -30,7 +30,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Tenant slug is required.' }, { status: 400 })
   }
 
-  const tenant = await findTenantRuntimeBySlug(body.slug)
+  const tenant = await findTenantRuntimeBySlug(body.slug, {
+    host:
+      request.headers.get('x-forwarded-host') ??
+      request.headers.get('host') ??
+      request.nextUrl.host,
+  })
   if (!tenant) {
     return NextResponse.json({ error: 'Tenant not found.' }, { status: 404 })
   }

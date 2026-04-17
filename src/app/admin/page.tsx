@@ -2,12 +2,12 @@ import { headers } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 
 import { AdminDashboard } from '@/components/admin-dashboard'
+import { listTenantRecords } from '@/db/tenant-repository'
 import { isAdminHost } from '@/lib/admin/control-plane'
 import {
   getAdminLoginConfig,
   getAdminSessionFromCookies,
 } from '@/lib/admin/session.server'
-import { readTenantRegistry } from '@/lib/tenants/registry.server'
 
 export default async function AdminPage() {
   const headerStore = await headers()
@@ -22,7 +22,7 @@ export default async function AdminPage() {
     redirect('/admin/login')
   }
 
-  const tenants = await readTenantRegistry()
+  const tenants = await listTenantRecords()
 
   return (
     <AdminDashboard

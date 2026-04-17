@@ -1,0 +1,155 @@
+{
+  "id": "730b5e02-fede-433e-ab95-dba19d3b4d37",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.tenant": {
+      "name": "tenant",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "medplum_project_id": {
+          "name": "medplum_project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "medplum_organization_id": {
+          "name": "medplum_organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "medplum_client_id": {
+          "name": "medplum_client_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bootstrap_status": {
+          "name": "bootstrap_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_provisioning_error": {
+          "name": "last_provisioning_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "tenant_slug_unique": {
+          "name": "tenant_slug_unique",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tenant_medplum_project_id_unique": {
+          "name": "tenant_medplum_project_id_unique",
+          "columns": [
+            {
+              "expression": "medplum_project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "tenant_medplum_client_id_unique": {
+          "name": "tenant_medplum_client_id_unique",
+          "columns": [
+            {
+              "expression": "medplum_client_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "tenant_status_check": {
+          "name": "tenant_status_check",
+          "value": "\"tenant\".\"status\" in ('active', 'disabled')"
+        },
+        "tenant_bootstrap_status_check": {
+          "name": "tenant_bootstrap_status_check",
+          "value": "\"tenant\".\"bootstrap_status\" in ('ready', 'pending-manual')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
