@@ -23,6 +23,7 @@ A skill is a set of local instructions stored in a `SKILL.md` file.
 - vercel-react-best-practices: React and Next.js performance optimization guidelines from Vercel Engineering. Use when writing, reviewing, or refactoring React/Next.js code. (file: /Users/andres/.agents/skills/vercel-react-best-practices/SKILL.md)
 - vercel-react-native-skills: React Native and Expo best practices for performant mobile apps. Use when working on React Native, Expo, mobile performance, or native platform APIs. (file: /Users/andres/.agents/skills/vercel-react-native-skills/SKILL.md)
 - web-design-guidelines: Review UI code for Web Interface Guidelines compliance. Use when reviewing UI, UX, accessibility, or web interface quality. (file: /Users/andres/.agents/skills/web-design-guidelines/SKILL.md)
+- database-schema-designer: A comprehensive skill for designing production-ready database schemas with built-in best practices for both SQL and NoSQL databases.
 
 ### Skill usage rule
 - If a request needs API integration, use `context-hub` first.

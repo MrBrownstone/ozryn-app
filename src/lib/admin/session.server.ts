@@ -46,11 +46,7 @@ function getAdminSessionSecret(): string {
 }
 
 function getAdminClientId(): string {
-  return (
-    process.env.MEDPLUM_ADMIN_CLIENT_ID?.trim() ||
-    process.env.NEXT_PUBLIC_MEDPLUM_ADMIN_CLIENT_ID?.trim() ||
-    ''
-  )
+  return process.env.MEDPLUM_ADMIN_CLIENT_ID?.trim() || ''
 }
 
 function getAllowedAdminEmails(): string[] {

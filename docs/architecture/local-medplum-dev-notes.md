@@ -36,12 +36,12 @@ This path is acceptable for local bootstrap even though it is not the final prov
 
 ## Current Local Operator Path
 
-There is now a separate local operator control plane on `admin.localhost:3000`.
+There is now a separate local operator control plane on `admin.localhost:3001`.
 
 Current local expectations:
 
-- tenant staff/admins still sign in on tenant hosts such as `rendal.localhost:3000`
-- the OZRYN operator signs in on `admin.localhost:3000`
+- tenant staff/admins still sign in on tenant hosts such as `rendal.localhost:3001`
+- the OZRYN operator signs in on `admin.localhost:3001`
 - local admin login uses a dedicated Medplum admin `ClientApplication`
 - local admin setup uses `.env.local` values:
   - `MEDPLUM_ADMIN_CLIENT_ID`
@@ -50,6 +50,21 @@ Current local expectations:
 - privileged Medplum writes still use the server-only provisioning client credentials
 
 The operator is not a tenant and is not stored in the tenant registry.
+
+### Next.js local port configuration
+
+The Next.js server port must be set at process start time, for example:
+
+- `pnpm dev -- --port 3001`
+- `PORT=3001 pnpm dev`
+
+Do not rely on `.env.local` to set the Next.js listening port.
+
+If OZRYN needs to derive local tenant/admin hosts while running behind a non-default local port, use:
+
+- `OZRYN_LOCAL_PORT=3001`
+
+That value is for OZRYN host derivation only. It does not make Next.js listen on that port.
 
 ## Known Local Auth and Config Gotchas
 

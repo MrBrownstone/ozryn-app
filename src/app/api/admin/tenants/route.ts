@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { findTenantRecordBySlug, listTenantRecords } from '@/db/tenant-repository'
 import { isAdminHost } from '@/lib/admin/control-plane'
 import { getAdminSessionFromRequest } from '@/lib/admin/session.server'
 import { createTenant } from '@/lib/provisioning/create-tenant'
-import { findTenantBySlug, readTenantRegistry } from '@/lib/tenants/registry.server'
 import { normalizeSlug } from '@/lib/tenants/slug'
 import type { CreateTenantInput } from '@/lib/tenants/types'
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     return authError
   }
 
-  const tenants = await readTenantRegistry()
+  const tenants = await listTenantRecords()
   return NextResponse.json({ tenants })
 }
 
@@ -63,10 +63,10 @@ export async function POST(request: NextRequest) {
   }
 
   const slug = normalizeSlug(body.slug ?? '')
-  const existing = slug ? await findTenantBySlug(slug) : undefined
+  const existing = slug ? await findTenantRecordBySlug(slug) : null
   if (existing) {
     return NextResponse.json(
-      { error: `Tenant "${slug}" already exists in the local registry.` },
+      { error: `Tenant "${slug}" already exists in the database.` },
       { status: 409 },
     )
   }

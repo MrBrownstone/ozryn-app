@@ -10,16 +10,13 @@ import type {
   Reference,
 } from '@medplum/fhirtypes'
 
+import { upsertTenantRecord } from '@/db/tenant-repository'
 import {
   createProjectScopedMedplumClient,
   createProvisioningMedplumClient,
-  getMedplumBaseUrl,
 } from '@/lib/provisioning/medplum.server'
-import { saveTenantRecord } from '@/lib/tenants/registry.server'
 import {
-  getLocalTenantHost,
-  getProductionTenantHost,
-  normalizeDomain,
+  getTenantLoginRedirectUri,
   normalizeSlug,
   validateSlug,
 } from '@/lib/tenants/slug'
@@ -41,10 +38,6 @@ type BootstrapUser = TenantBootstrapUserInput & {
 type PolicyReferences = Partial<
   Record<TenantBootstrapUserRole | 'ServiceBot', Reference<AccessPolicy>>
 >
-
-function unique(values: string[]): string[] {
-  return Array.from(new Set(values))
-}
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase()
@@ -111,7 +104,10 @@ function assertInput(input: CreateTenantInput): BootstrapUser[] {
 
   const bootstrapUsers = toBootstrapUsers(input)
   for (const user of bootstrapUsers) {
-    assertHumanUser(user, user.isPrimaryAdmin ? 'Primary admin' : `Initial ${user.role}`)
+    assertHumanUser(
+      user,
+      user.isPrimaryAdmin ? 'Primary admin' : `Initial ${user.role}`,
+    )
   }
 
   const emails = bootstrapUsers.map((user) => user.email)
@@ -120,14 +116,6 @@ function assertInput(input: CreateTenantInput): BootstrapUser[] {
   }
 
   return bootstrapUsers
-}
-
-function getCanonicalDomain(slug: string, customDomains: string[]): string {
-  return customDomains[0] ?? getProductionTenantHost(slug)
-}
-
-function getLocalLoginRedirectUri(slug: string): string {
-  return `http://${getLocalTenantHost(slug)}/login`
 }
 
 async function createProject(name: string): Promise<Project> {
@@ -156,7 +144,7 @@ async function createTenantWebClient(
   const medplum = await createProvisioningMedplumClient()
   return medplum.post(`admin/projects/${projectId}/client`, {
     name: `${displayName} OZRYN Web`,
-    description: 'Tenant web client for OZRYN local provisioning',
+    description: 'Tenant web client for OZRYN tenant runtime',
     redirectUri,
   }) as Promise<ClientApplication>
 }
@@ -327,9 +315,6 @@ export async function createTenant(
 
   const slug = normalizeSlug(input.slug)
   const displayName = input.displayName.trim()
-  const customDomains = unique(
-    (input.customDomains ?? []).map(normalizeDomain).filter(Boolean),
-  )
 
   const project = await createProject(displayName)
   if (!project.id) {
@@ -339,7 +324,7 @@ export async function createTenant(
   const webClient = await createTenantWebClient(
     project.id,
     displayName,
-    getLocalLoginRedirectUri(slug),
+    getTenantLoginRedirectUri(slug),
   )
   if (!webClient.id) {
     throw new Error('Medplum tenant client creation did not return an id.')
@@ -476,35 +461,17 @@ export async function createTenant(
     )
   }
 
-  if (customDomains.length > 0) {
-    addManualStep(
-      manualSteps,
-      'Add and verify the tenant custom domains in Vercel manually. The local provisioning step stores the requested domains but does not call the Vercel Domains API yet.',
-    )
-  }
-
-  const now = new Date().toISOString()
-  const tenant: TenantRecord = {
+  const tenant: TenantRecord = await upsertTenantRecord({
     slug,
     displayName,
     status: 'active',
     bootstrapStatus: manualSteps.length > 0 ? 'pending-manual' : 'ready',
-    domains: unique([
-      getLocalTenantHost(slug),
-      getProductionTenantHost(slug),
-      ...customDomains,
-    ]),
-    canonicalDomain: getCanonicalDomain(slug, customDomains),
-    medplumBaseUrl: getMedplumBaseUrl(),
     medplumProjectId: project.id,
     medplumOrganizationId: organizationId,
     medplumClientId: webClient.id,
-    createdAt: now,
-    updatedAt: now,
-    manualSteps,
-  }
-
-  await saveTenantRecord(tenant)
+    lastProvisioningError:
+      manualSteps.length > 0 ? manualSteps.join('\n') : null,
+  })
 
   return {
     tenant,

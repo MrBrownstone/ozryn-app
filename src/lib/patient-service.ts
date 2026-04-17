@@ -239,6 +239,27 @@ export interface UiCarePlanItem {
   dueDate: string
 }
 
+function getCarePlanSortValue(carePlan: CarePlan): number {
+  const candidates = [
+    carePlan.period?.start,
+    carePlan.period?.end,
+    carePlan.meta?.lastUpdated,
+  ]
+
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue
+    }
+
+    const value = new Date(candidate).getTime()
+    if (!Number.isNaN(value)) {
+      return value
+    }
+  }
+
+  return 0
+}
+
 export async function getCarePlanItems(
   patientId: string,
   count = 4,
@@ -246,11 +267,13 @@ export async function getCarePlanItems(
   const medplum = getMedplum()
   const bundle = (await medplum.search("CarePlan", {
     subject: `Patient/${patientId}`,
-    _sort: "-period-start",
-    _count: String(count),
+    _sort: "-_lastUpdated",
+    _count: String(Math.max(count * 3, 12)),
   })) as Bundle
 
-  const cps = bundleToResources<CarePlan>(bundle)
+  const cps = bundleToResources<CarePlan>(bundle).sort(
+    (a, b) => getCarePlanSortValue(b) - getCarePlanSortValue(a),
+  )
 
   return cps.slice(0, count).map((cp) => {
     const title = cp.title

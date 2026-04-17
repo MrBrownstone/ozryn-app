@@ -11,19 +11,13 @@ function requireEnv(name: string): string {
 }
 
 export function getMedplumBaseUrl(): string {
-  return (
-    process.env.MEDPLUM_BASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_MEDPLUM_BASE_URL?.trim() ||
-    ''
-  )
+  return process.env.MEDPLUM_BASE_URL?.trim() || ''
 }
 
 export async function createProvisioningMedplumClient(): Promise<MedplumClient> {
   const baseUrl = getMedplumBaseUrl()
   if (!baseUrl) {
-    throw new Error(
-      'Missing MEDPLUM_BASE_URL or NEXT_PUBLIC_MEDPLUM_BASE_URL for provisioning.',
-    )
+    throw new Error('Missing MEDPLUM_BASE_URL for provisioning.')
   }
 
   const medplum = new MedplumClient({
@@ -44,9 +38,7 @@ export async function createProjectScopedMedplumClient(
 ): Promise<MedplumClient> {
   const baseUrl = getMedplumBaseUrl()
   if (!baseUrl) {
-    throw new Error(
-      'Missing MEDPLUM_BASE_URL or NEXT_PUBLIC_MEDPLUM_BASE_URL for project login.',
-    )
+    throw new Error('Missing MEDPLUM_BASE_URL for project login.')
   }
 
   const medplum = new MedplumClient({

@@ -1,30 +1,32 @@
-export type TenantStatus = 'active' | 'disabled'
+export const TENANT_STATUS_VALUES = ['active', 'disabled'] as const
 
-export type TenantBootstrapStatus = 'ready' | 'pending-manual'
+export type TenantStatus = (typeof TENANT_STATUS_VALUES)[number]
+
+export const TENANT_BOOTSTRAP_STATUS_VALUES = ['ready', 'pending-manual'] as const
+
+export type TenantBootstrapStatus =
+  (typeof TENANT_BOOTSTRAP_STATUS_VALUES)[number]
 
 export type TenantBootstrapUserRole = 'TenantAdmin' | 'Staff'
 
 export interface TenantRecord {
+  id: string
   slug: string
   displayName: string
   status: TenantStatus
   bootstrapStatus: TenantBootstrapStatus
-  domains: string[]
-  canonicalDomain: string
-  medplumBaseUrl: string
   medplumProjectId: string
   medplumOrganizationId: string | null
   medplumClientId: string
+  lastProvisioningError: string | null
   createdAt: string
   updatedAt: string
-  manualSteps: string[]
 }
 
 export interface TenantRuntimeConfig {
   slug: string
   displayName: string
-  canonicalDomain: string
-  domains: string[]
+  tenantHost: string
   medplumBaseUrl: string
   medplumClientId: string
 }
@@ -51,7 +53,6 @@ export interface CreateTenantInput {
   displayName: string
   primaryAdmin: TenantPrimaryAdminInput
   initialUsers?: TenantBootstrapUserInput[]
-  customDomains?: string[]
 }
 
 export interface TenantProvisionedUserSummary {
