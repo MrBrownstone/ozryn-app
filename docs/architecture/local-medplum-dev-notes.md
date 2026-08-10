@@ -49,6 +49,16 @@ Current local expectations:
   - `OZRYN_ADMIN_SESSION_SECRET`
 - privileged Medplum writes still use the server-only provisioning client credentials
 
+The provisioning client must be a member of the Medplum `Super Admin` project
+with `ProjectMembership.admin = true`. Merely creating a client from the Super
+Admin project's Clients page does not make it an admin. Without that flag,
+project creation may appear to work while AccessPolicy creation and user invites
+fail later in the same bootstrap.
+
+Medplum `AccessPolicy` resources do not support a `description` property. Keep
+human-readable labels in `AccessPolicy.name`; copying the similarly named
+ClientApplication payload field causes policy creation to fail validation.
+
 The operator is not a tenant and is not stored in the tenant registry.
 
 ### Next.js local port configuration

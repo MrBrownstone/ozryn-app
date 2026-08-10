@@ -68,6 +68,27 @@ The admin control-plane host is configured separately with `OZRYN_ADMIN_HOST`.
 
 Because the host is derived, OZRYN does not need a tenant-domain table yet.
 
+## Vercel Domain Contract
+
+Production uses one Vercel project and one deployment for the public app, the
+operator control plane, and slug-derived tenant hosts:
+
+- `ozryn.app` is the apex domain.
+- `admin.ozryn.app` is reserved for the operator control plane.
+- `<slug>.ozryn.app` resolves a tenant through the Postgres tenant registry.
+- unknown subdomains must fail tenant resolution; a wildcard DNS route does not
+  create a tenant.
+
+The Vercel project must have both `ozryn.app` and `*.ozryn.app` attached. Adding
+only the apex domain does not assign arbitrary subdomains to the project. Vercel
+wildcard domains use DNS-01 certificate validation and normally require the
+domain to use Vercel nameservers. Because `ozryn.app` is already managed through
+Vercel DNS, this is the intended production setup.
+
+This wildcard is deployment infrastructure, not tenant metadata. It does not
+change the rule that customer-owned custom domains remain out of scope and do
+not belong in the current tenant table.
+
 ## Runtime Config
 
 The browser receives a runtime-safe config derived from the database row plus deployment config:

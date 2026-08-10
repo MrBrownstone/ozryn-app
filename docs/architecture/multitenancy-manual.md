@@ -50,7 +50,12 @@ There is no flat-file registry fallback anymore.
 
 ## Why There Is No Domain Table Yet
 
-Custom domains are out of scope for the current implementation.
+OZRYN's own slug-derived hosts are supported without a domain table. The Vercel
+project receives `*.ozryn.app`, and runtime code resolves the first hostname
+label against the Postgres tenant registry. `admin.ozryn.app` is reserved before
+tenant lookup.
+
+Custom customer-owned domains are out of scope for the current implementation.
 
 Because every tenant host is derived from `slug`, OZRYN does not need to persist:
 
@@ -59,6 +64,9 @@ Because every tenant host is derived from `slug`, OZRYN does not need to persist
 - domain verification state
 
 If custom domains return later, that can be added as a separate concern without changing the tenant-to-Medplum binding model.
+
+The wildcard is not a trust boundary. It only sends requests to the deployment;
+the application still rejects unknown, disabled, and reserved tenant slugs.
 
 ## Login Model
 
@@ -74,3 +82,6 @@ Browser Medplum storage is still namespaced by tenant slug so local sessions do 
 
 The old `data/tenants.local.json` registry is no longer used at runtime.
 If local data exists there, it can be imported with the dedicated legacy import script before the file is discarded.
+
+That importer is a local compatibility tool. It is not part of production
+bootstrap and must not be used to copy local tenants into production.

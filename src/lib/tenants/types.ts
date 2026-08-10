@@ -9,6 +9,23 @@ export type TenantBootstrapStatus =
 
 export type TenantBootstrapUserRole = 'TenantAdmin' | 'Staff'
 
+export interface TenantOrganizationAddress {
+  line1?: string
+  line2?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  country?: string
+}
+
+export interface TenantOrganizationProfile {
+  legalName?: string
+  contactEmail: string
+  contactPhone?: string
+  address?: TenantOrganizationAddress
+  timezone?: string
+}
+
 export interface TenantRecord {
   id: string
   slug: string
@@ -51,8 +68,15 @@ export interface TenantPrimaryAdminInput {
 export interface CreateTenantInput {
   slug: string
   displayName: string
+  organizationProfile: TenantOrganizationProfile
   primaryAdmin: TenantPrimaryAdminInput
   initialUsers?: TenantBootstrapUserInput[]
+}
+
+export interface UpdateTenantInput {
+  displayName?: string
+  status?: TenantStatus
+  organizationProfile?: TenantOrganizationProfile
 }
 
 export interface TenantProvisionedUserSummary {
@@ -65,6 +89,34 @@ export interface TenantProvisionedUserSummary {
   profileReference: string | null
   practitionerRoleId: string | null
   note?: string
+}
+
+export interface TenantMembershipSummary {
+  membershipId: string
+  projectId: string | null
+  userReference: string | null
+  profileReference: string | null
+  userName: string | null
+  firstName: string
+  lastName: string
+  fullName: string
+  email: string | null
+  role: TenantBootstrapUserRole
+  active: boolean
+  admin: boolean
+  accessPolicyReference: string | null
+  accessPolicyName: string | null
+  practitionerRoleId: string | null
+}
+
+export interface UpdateTenantMembershipInput {
+  role?: TenantBootstrapUserRole
+  active?: boolean
+}
+
+export interface TenantDetail {
+  tenant: TenantRecord
+  organizationProfile: TenantOrganizationProfile | null
 }
 
 export interface CreateTenantResult {

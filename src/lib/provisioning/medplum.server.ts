@@ -32,6 +32,24 @@ export async function createProvisioningMedplumClient(): Promise<MedplumClient> 
   return medplum
 }
 
+export async function createProvisioningAdminMedplumClient(): Promise<MedplumClient> {
+  const medplum = await createProvisioningMedplumClient()
+
+  if (!medplum.isSuperAdmin()) {
+    throw new Error(
+      'The Medplum provisioning client must belong to the Super Admin project.',
+    )
+  }
+
+  if (!medplum.isProjectAdmin()) {
+    throw new Error(
+      'The Medplum provisioning client ProjectMembership must have admin=true in the Super Admin project.',
+    )
+  }
+
+  return medplum
+}
+
 export async function createProjectScopedMedplumClient(
   clientId: string,
   clientSecret: string,

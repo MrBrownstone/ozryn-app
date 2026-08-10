@@ -58,7 +58,8 @@ The goal is to start that way.
 - [x] Local Medplum app accessible for development/testing
 - [x] Initial architectural direction chosen: FHIR-first with Medplum as core backend
 - [x] Strategic tenancy decision made: **one Medplum Project per customer / organization**
-- [x] Strategic auth direction chosen: **external IdP + Medplum project-scoped token bridging**
+- [x] Current MVP auth direction chosen: **Medplum-backed, browser-direct tenant runtime**
+- [x] Future auth direction documented: **external IdP + Medplum project-scoped token bridging**
 - [x] Strategic RBAC direction chosen: minimal roles for MVP
 - [x] Strategic provisioning direction chosen: no direct SQL hacks, use Medplum Admin/FHIR APIs only
 - [x] Manual two-tenant local bootstrap validated with separate Medplum projects, separate OZRYN `ClientApplication` records, and distinct imported FHIR bundles
@@ -79,7 +80,7 @@ What this milestone does not change:
 
 - runtime auth is still browser-direct through Medplum for local MVP
 - external IdP and deterministic cross-tenant identity linking are still future-phase work
-- production-grade hostname/domain routing still needs to be completed beyond the local selector/cookie path
+- production hostname resolution is implemented in the app; attaching and verifying `*.ozryn.app` on the Vercel project remains a deployment step
 
 ### Admin control-plane milestone as of 2026-03-31
 
@@ -128,9 +129,10 @@ These are treated as design constraints unless explicitly revised:
    - No pretending Railway or Fly.io are the long-term answer for regulated health infrastructure.
    - Useful for demos maybe, not the backbone.
 
-4. **External identity, internal authorization**
-   - Use external IdP for global authentication.
-   - Use Medplum for project-scoped authorization and resource access.
+4. **Medplum-backed auth now, external identity later**
+   - Current MVP uses tenant-scoped Medplum login directly from OZRYN.
+   - Future architecture can replace the login entrypoint with external IdP + Medplum token bridging.
+   - Medplum remains responsible for project-scoped authorization and resource access in both models.
 
 5. **No direct database mutation of Medplum internals**
    - Provisioning and membership changes only through supported APIs.
@@ -157,11 +159,10 @@ These are treated as design constraints unless explicitly revised:
 - Supports custom domains or tenant resolution strategy
 
 ### Identity
-- **External IdP** for primary login
-- Medplum token bridging for project-scoped access
-- Deterministic user linking via:
-  - `externalId`
-  - email
+- Current MVP: **Medplum-backed login** through the tenant `ClientApplication`
+- Current runtime: browser-direct Medplum session, namespaced per tenant
+- Future target: external IdP with Medplum token bridging for project-scoped access
+- Future deterministic user linking via `externalId` and email
 
 ### Storage
 - Clinical documents and attachments in **AWS S3**
@@ -223,7 +224,14 @@ If needed later:
 
 ### 7.1 Authentication
 
-Use an **external IdP** for global identity.
+Current MVP authentication is **Medplum-backed**:
+
+- resolve tenant before client bootstrap
+- use the tenant `ClientApplication`
+- keep browser Medplum storage namespaced by tenant
+- let Medplum own login/session behavior for this phase
+
+External IdP remains the future identity target.
 
 Why:
 
@@ -234,7 +242,13 @@ Why:
 
 ### 7.2 Authorization
 
-After external auth:
+Current authorization:
+
+- user signs into the tenant Medplum project
+- Medplum `ProjectMembership` and `AccessPolicy` records authorize resource access
+- tenant admins manage day-to-day users in OZRYN
+
+Future authorization after external auth:
 
 - resolve tenant
 - map user to the correct Medplum project
@@ -427,7 +441,11 @@ Make tenancy real before building business features.
   - create Organization
   - create first TenantAdmin invite
   - register tenant metadata in OZRYN app layer
-- [ ] Define tenant-aware Vercel deployment/runtime configuration approach
+- [x] Define tenant-aware Vercel deployment/runtime configuration approach:
+  - one Vercel project and deployment
+  - `admin.ozryn.app` reserved for the operator control plane
+  - `*.ozryn.app` routes slug-derived tenant hosts
+  - application tenant lookup remains the authorization gate for wildcard traffic
 - [ ] Document isolation guarantees and non-goals
 
 ## Deliverables
@@ -441,25 +459,22 @@ Make tenancy real before building business features.
 # Phase 2 - Authentication and authorization
 
 ## Goal
-Implement secure login and tenant-scoped authorization.
+Keep the current Medplum-backed tenant auth stable while preserving the path to external identity later.
 
 ## Outcomes
-- external identity integrated
-- user to tenant mapping defined
-- Medplum project-scoped access working
+- Medplum project-scoped access working for tenant staff
+- tenant admin membership management works inside OZRYN
+- current access policies distinguish tenant administration from clinical work
+- external identity remains documented future work, not a blocker for the clinical MVP
 
 ## Tasks
-- [ ] Select/confirm external IdP implementation
-- [ ] Define login flow:
-  - user authenticates with IdP
-  - app resolves tenant membership
-  - app exchanges or provisions Medplum access
-- [ ] Implement deterministic identity linking via externalId + email
-- [ ] Define invite and membership flows
+- [x] Keep tenant runtime login Medplum-backed for this milestone
+- [x] Define invite and membership flows for `TenantAdmin` and `Staff`
 - [ ] Create MVP access policies for:
-  - TenantAdmin
-  - Staff/Clinician
-  - ServiceBot
+  - `TenantAdmin`: tenant/user management plus clinical operations
+  - `Staff` / `Clinician`: clinical record read/write without tenant administration
+  - `ServiceBot`: controlled automation access
+- [ ] Document the future external IdP replacement point without implementing it yet
 - [ ] Decide how service-to-service auth works for backend workers
 
 ## Deliverables
@@ -470,39 +485,44 @@ Implement secure login and tenant-scoped authorization.
 
 ---
 
-# Phase 3 - Clinical backbone MVP
+# Phase 3 - Clinical Record MVP
 
 ## Goal
-Stand up the first usable clinical OZRYN slice on top of Medplum.
+Turn the Medplum-backed dashboard into a usable staff-facing ficha clinica.
 
 ## Outcomes
-- working tenant-aware app shell
-- core FHIR entities usable
-- basic clinical workflows visible in UI
+- tenant-aware clinical workspace
+- patient registry with OZRYN-native create and edit flows
+- basic clinical data entry and follow-up tracking
+- lightweight document references before the full S3/Binary ingestion pipeline
 
 ## Tasks
-- [ ] Build app shell in Next.js on Vercel
+- [x] Build app shell in Next.js on Vercel
 - [x] Implement tenant-aware session bootstrapping
-- [ ] Implement core screens for MVP:
-  - patient list
-  - patient detail
-  - encounters/observations timeline
-  - document list/upload
-- [ ] Support core resources:
-  - Patient
-  - Practitioner
-  - Organization
-  - Encounter
-  - Observation
-  - DocumentReference
-- [ ] Define minimal navigation and UX for staff
+- [ ] Implement patient registry:
+  - search and select patients
+  - create `Patient`
+  - edit demographics, MRN, contact, address, and active status
+- [ ] Implement patient workspace:
+  - overview
+  - timeline/data
+  - follow-ups
+  - documents
+- [ ] Support first writable clinical resources:
+  - `Patient`
+  - `Observation`
+  - `Task`
+  - `DocumentReference`
+- [ ] Keep full `Binary`/S3 upload and extraction workflows in Phase 4
+- [ ] Define minimal navigation and UX for staff clinical work
 - [ ] Ensure every mutation is tenant-scoped and policy-safe
 
 ## Deliverables
-- MVP UI shell
-- patient list/detail flows
-- file upload flow
-- basic longitudinal record view
+- patient registry and edit flow
+- basic observation/data entry flow
+- follow-up task flow
+- lightweight document reference flow
+- AWS staging clinical smoke checklist
 
 ---
 
@@ -692,9 +712,10 @@ These rules exist to prevent “creative” engineering detours.
 
 1. Freeze this roadmap as the canonical implementation roadmap.
 2. Create supporting architecture docs for tenancy, auth, provisioning, and AWS.
-3. Start with **Phase 1 and Phase 2**, not with random UI work.
+3. Start the next implementation push with **Phase 3 Clinical Record MVP**.
 4. Keep local Medplum as the dev baseline until AWS staging is ready.
-5. Treat document ingestion + inference as an early product capability, not a distant research fantasy.
+5. Use AWS staging to smoke test tenant provisioning, staff login, patient CRUD, clinical data entry, and follow-up flows.
+6. Treat document ingestion + inference as an early product capability after the ficha clinica is usable.
 
 ---
 

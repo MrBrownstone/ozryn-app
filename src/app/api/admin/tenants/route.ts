@@ -1,42 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { findTenantRecordBySlug, listTenantRecords } from '@/db/tenant-repository'
-import { isAdminHost } from '@/lib/admin/control-plane'
-import { getAdminSessionFromRequest } from '@/lib/admin/session.server'
+import { requireProvisioningAccess } from '@/lib/admin/api-auth'
 import { createTenant } from '@/lib/provisioning/create-tenant'
 import { normalizeSlug } from '@/lib/tenants/slug'
 import type { CreateTenantInput } from '@/lib/tenants/types'
 
-function hasProvisioningKey(request: NextRequest): boolean {
-  const configuredKey = process.env.OZRYN_PROVISIONING_API_KEY?.trim()
-  if (!configuredKey) {
-    return false
+function getErrorStatus(message: string): number {
+  if (
+    message.includes('required') ||
+    message.includes('must') ||
+    message.includes('At least') ||
+    message.includes('Unsupported') ||
+    message.includes('already exists')
+  ) {
+    return 400
   }
 
-  const incomingKey = request.headers.get('x-ozryn-provisioning-key')?.trim()
-  return Boolean(incomingKey && incomingKey === configuredKey)
-}
-
-function requireProvisioningAccess(request: NextRequest): NextResponse | null {
-  if (hasProvisioningKey(request)) {
-    return null
-  }
-
-  const host =
-    request.headers.get('x-forwarded-host') ??
-    request.headers.get('host') ??
-    request.nextUrl.host
-
-  if (!isAdminHost(host)) {
-    return NextResponse.json({ error: 'Not found.' }, { status: 404 })
-  }
-
-  const session = getAdminSessionFromRequest(request)
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
-  }
-
-  return null
+  return 500
 }
 
 export async function GET(request: NextRequest) {
@@ -82,7 +63,7 @@ export async function POST(request: NextRequest) {
       {
         error: message,
       },
-      { status: 500 },
+      { status: getErrorStatus(message) },
     )
   }
 }
