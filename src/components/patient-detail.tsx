@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -9,9 +9,15 @@ import { getPatientDetail, type UiPatientDetail } from "@/lib/patient-service"
 
 interface PatientDetailProps {
   patientId: string
+  refreshKey?: number
+  onEditPatient?: () => void
 }
 
-export function PatientDetail({ patientId }: PatientDetailProps) {
+export function PatientDetail({
+  patientId,
+  refreshKey = 0,
+  onEditPatient,
+}: PatientDetailProps) {
   const [patient, setPatient] = useState<UiPatientDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +56,7 @@ export function PatientDetail({ patientId }: PatientDetailProps) {
     return () => {
       cancelled = true
     }
-  }, [patientId])
+  }, [patientId, refreshKey])
 
   if (loading) {
     return (
@@ -83,29 +89,39 @@ export function PatientDetail({ patientId }: PatientDetailProps) {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">Patient/{patient.id}</Button>
-          <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 text-white">FHIR Synced</Button>
+          {onEditPatient ? (
+            <Button size="sm" onClick={onEditPatient}>
+              <Pencil className="w-4 h-4" />
+              Edit
+            </Button>
+          ) : null}
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <Card className="p-4 bg-gradient-to-br from-cyan-50 to-teal-50 border-border/60">
+      <div className="grid gap-4 mb-6 md:grid-cols-2 xl:grid-cols-5">
+        <Card className="p-4 bg-cyan-50/70 border-border/60">
           <p className="text-xs text-muted-foreground mb-1">Gender</p>
           <p className="text-lg font-semibold text-foreground">{patient.gender}</p>
           <p className="text-xs text-cyan-600 mt-1">FHIR Patient.gender</p>
         </Card>
-        <Card className="p-4 bg-gradient-to-br from-cyan-50 to-teal-50 border-border/60">
+        <Card className="p-4 bg-cyan-50/70 border-border/60">
           <p className="text-xs text-muted-foreground mb-1">Address</p>
           <p className="text-sm font-semibold text-foreground">{patient.address}</p>
           <p className="text-xs text-cyan-600 mt-1">Primary home address</p>
         </Card>
-        <Card className="p-4 bg-gradient-to-br from-cyan-50 to-teal-50 border-border/60">
+        <Card className="p-4 bg-cyan-50/70 border-border/60">
+          <p className="text-xs text-muted-foreground mb-1">Contact</p>
+          <p className="text-sm font-semibold text-foreground">{patient.phone}</p>
+          <p className="text-xs text-cyan-600 mt-1">{patient.email}</p>
+        </Card>
+        <Card className="p-4 bg-cyan-50/70 border-border/60">
           <p className="text-xs text-muted-foreground mb-1">Status</p>
           <p className="text-lg font-semibold text-foreground">
             {patient.status[0].toUpperCase() + patient.status.slice(1)}
           </p>
           <p className="text-xs text-cyan-600 mt-1">Project-scoped patient record</p>
         </Card>
-        <Card className="p-4 bg-gradient-to-br from-cyan-50 to-teal-50 border-border/60">
+        <Card className="p-4 bg-cyan-50/70 border-border/60">
           <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
           <p className="text-sm font-semibold text-foreground">{patient.lastUpdated}</p>
           <p className="text-xs text-cyan-600 mt-1">Latest Medplum sync</p>

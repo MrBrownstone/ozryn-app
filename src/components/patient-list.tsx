@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search } from "lucide-react"
+import { Plus, Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
@@ -14,9 +15,16 @@ import {
 interface PatientListProps {
   selectedPatient: string | null
   onSelectPatient: (id: string) => void
+  onAddPatient?: () => void
+  refreshKey?: number
 }
 
-export function PatientList({ selectedPatient, onSelectPatient }: PatientListProps) {
+export function PatientList({
+  selectedPatient,
+  onSelectPatient,
+  onAddPatient,
+  refreshKey = 0,
+}: PatientListProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [patients, setPatients] = useState<UiPatientListItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -45,12 +53,25 @@ export function PatientList({ selectedPatient, onSelectPatient }: PatientListPro
     return () => {
       cancelled = true
     }
-  }, [onSelectPatient, searchTerm, selectedPatient])
+  }, [onSelectPatient, refreshKey, searchTerm, selectedPatient])
 
   return (
     <Card className="flex flex-col h-full border-border/60">
       <div className="p-4 border-b border-border/60">
-        <h2 className="text-lg font-semibold text-foreground mb-3">Patient List</h2>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">Patients</h2>
+          {onAddPatient ? (
+            <Button
+              type="button"
+              size="icon-sm"
+              onClick={onAddPatient}
+              title="Add patient"
+              aria-label="Add patient"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          ) : null}
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -116,8 +137,20 @@ export function PatientList({ selectedPatient, onSelectPatient }: PatientListPro
           ))}
 
           {!loading && patients.length === 0 && (
-            <div className="px-4 py-6 text-xs text-muted-foreground">
+            <div className="px-4 py-8 text-sm text-muted-foreground">
               No patients found.
+              {onAddPatient ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={onAddPatient}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add patient
+                </Button>
+              ) : null}
             </div>
           )}
         </div>

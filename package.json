@@ -6,6 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
+    "test:unit": "node --test --experimental-transform-types --loader ./scripts/ts-test-loader.mjs src/lib/patient-service.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:import-tenants-local": "tsx src/db/import-legacy-tenant-registry.ts"
