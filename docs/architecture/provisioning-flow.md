@@ -138,6 +138,12 @@ Production starts with a fresh OZRYN Postgres database. Set the production
 `DATABASE_URL` and run `pnpm db:migrate` to create or update the OZRYN schema.
 This applies schema migrations only; it does not copy local rows.
 
+The application runtime uses the pooled `DATABASE_URL`. Database migrations
+prefer `DATABASE_URL_UNPOOLED` when the provider exposes it, then fall back to
+`DATABASE_URL`. Explicit process environment variables take precedence over
+local dotenv files, so a production migration cannot be silently redirected to
+the developer's local Postgres instance.
+
 Do not import local tenants, users, memberships, or clinical data into
 production. New production tenant bindings are created through the operator
 control plane and Medplum-backed provisioning flow. Any future migration of

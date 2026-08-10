@@ -3,11 +3,13 @@ import { drizzle } from 'drizzle-orm/node-postgres'
 import { config as loadEnv } from 'dotenv'
 import { Pool } from 'pg'
 
+loadEnv({ path: '.env.local' })
 loadEnv()
-loadEnv({ path: '.env.local', override: true })
 
 async function main(): Promise<void> {
-  const connectionString = process.env.DATABASE_URL?.trim()
+  const connectionString =
+    process.env.DATABASE_URL_UNPOOLED?.trim() ||
+    process.env.DATABASE_URL?.trim()
   if (!connectionString) {
     throw new Error('Missing DATABASE_URL.')
   }

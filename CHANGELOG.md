@@ -52,6 +52,7 @@ Not counted as done for `ozryn-app`:
 - Replaced the unsupported Medplum `project` search parameter with project-scoped membership queries.
 - Removed the invalid `AccessPolicy.description` property that caused default tenant policy creation to fail.
 - Prevented non-admin Super Admin clients from starting a bootstrap that would leave avoidable partial tenant data.
+- Made database migrations prefer the provider's unpooled connection and prevented `.env.local` from overriding an explicitly supplied production connection.
 
 ### Verification
 

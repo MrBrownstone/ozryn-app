@@ -2,8 +2,8 @@ import { config as loadEnv } from 'dotenv'
 
 import { defineConfig } from 'drizzle-kit'
 
+loadEnv({ path: '.env.local' })
 loadEnv()
-loadEnv({ path: '.env.local', override: true })
 
 export default defineConfig({
   schema: './src/db/schema.ts',
@@ -11,6 +11,7 @@ export default defineConfig({
   dialect: 'postgresql',
   dbCredentials: {
     url:
+      process.env.DATABASE_URL_UNPOOLED?.trim() ||
       process.env.DATABASE_URL?.trim() ||
       'postgres://postgres:postgres@localhost:5432/ozryn',
   },
