@@ -11,6 +11,7 @@ import type {
 
 import {
   findTenantRecordBySlug,
+  listTenantRecords,
   upsertTenantRecord,
 } from '@/db/tenant-repository'
 import { createProvisioningMedplumClient } from '@/lib/provisioning/medplum.server'
@@ -30,6 +31,7 @@ import { normalizeSlug } from '@/lib/tenants/slug'
 import type {
   TenantBootstrapUserRole,
   TenantDetail,
+  TenantMembershipDirectoryEntry,
   TenantMembershipSummary,
   TenantRecord,
   UpdateTenantInput,
@@ -248,6 +250,48 @@ export async function listTenantMemberships(
         right.fullName || right.email || right.userName || right.membershipId
       return leftLabel.localeCompare(rightLabel)
     })
+}
+
+export async function listAllTenantMemberships(): Promise<{
+  memberships: TenantMembershipDirectoryEntry[]
+  failedTenants: string[]
+}> {
+  const tenants = await listTenantRecords()
+  const results = await Promise.all(
+    tenants.map(async (tenant) => {
+      try {
+        const memberships = await listTenantMemberships(tenant.slug)
+        return { tenant, memberships }
+      } catch {
+        return { tenant, memberships: null }
+      }
+    }),
+  )
+
+  const memberships = results
+    .flatMap((result) =>
+      (result.memberships ?? []).map(
+        (membership): TenantMembershipDirectoryEntry => ({
+          ...membership,
+          tenantSlug: result.tenant.slug,
+          tenantDisplayName: result.tenant.displayName,
+        }),
+      ),
+    )
+    .sort((left, right) => {
+      const leftLabel =
+        left.fullName || left.email || left.userName || left.membershipId
+      const rightLabel =
+        right.fullName || right.email || right.userName || right.membershipId
+      return leftLabel.localeCompare(rightLabel)
+    })
+
+  return {
+    memberships,
+    failedTenants: results
+      .filter((result) => result.memberships === null)
+      .map((result) => result.tenant.displayName),
+  }
 }
 
 export async function updateTenantMembership(

@@ -97,6 +97,14 @@ Current operator edit scope:
 - inspect memberships
 - update existing membership role/active state
 
+The operator UI exposes this scope as three real modules:
+
+- `Overview`: tenant counts, lifecycle state, and bootstrap work requiring attention
+- `Tenants`: searchable tenant registry, provisioning, tenant detail, organization edits, and soft deactivate/reactivate controls
+- `Members`: a searchable cross-tenant support directory for existing memberships and their role/active state
+
+Admin view state is deep-linkable under `/admin` with `view` or `tenant` query parameters. Hard delete is not presented as ordinary CRUD: disabling a tenant preserves its Medplum project and clinical records until an explicit offboarding workflow exists.
+
 Out of scope for the operator control plane in this slice:
 
 - creating day-to-day users after bootstrap

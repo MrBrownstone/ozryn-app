@@ -109,6 +109,12 @@ export interface TenantMembershipSummary {
   practitionerRoleId: string | null
 }
 
+export interface TenantMembershipDirectoryEntry
+  extends TenantMembershipSummary {
+  tenantSlug: string
+  tenantDisplayName: string
+}
+
 export interface UpdateTenantMembershipInput {
   role?: TenantBootstrapUserRole
   active?: boolean
