@@ -2,14 +2,17 @@
   "name": "ozryn-app",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
     "test:unit": "node --test --experimental-transform-types --loader ./scripts/ts-test-loader.mjs src/lib/tenants/management.test.ts src/lib/patient-service.test.ts",
+    "test:rendal-pilot": "node --import tsx --test tools/rendal-pilot/*.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/db/migrate.ts",
-    "db:import-tenants-local": "tsx src/db/import-legacy-tenant-registry.ts"
+    "db:import-tenants-local": "tsx src/db/import-legacy-tenant-registry.ts",
+    "rendal:pilot": "node --env-file=.env.local --import tsx tools/rendal-pilot/cli.ts"
   },
   "dependencies": {
     "@mantine/core": "7.17.8",
@@ -46,6 +49,7 @@
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
     "drizzle-kit": "^0.31.10",
+    "mammoth": "^1.12.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",

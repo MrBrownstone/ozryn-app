@@ -2,9 +2,20 @@ import type {
   Annotation,
   Bundle,
   CarePlan,
+  Composition,
+  Condition,
+  Coverage,
+  DiagnosticReport,
   DocumentReference,
+  Encounter,
+  Immunization,
+  MedicationStatement,
   Observation,
   Patient,
+  Procedure,
+  QuestionnaireResponse,
+  Resource,
+  ServiceRequest,
   Task,
 } from '@medplum/fhirtypes'
 
@@ -12,6 +23,8 @@ import { getMedplum } from '@/lib/medplum'
 import { getProjectUserContext } from '@/lib/session'
 
 export const OZRYN_MRN_SYSTEM = 'https://ozryn.app/fhir/NamingSystem/mrn'
+const AR_DNI_SYSTEM = 'https://ozryn.app/fhir/NamingSystem/ar-dni'
+const AR_CUIL_SYSTEM = 'https://ozryn.app/fhir/NamingSystem/ar-cuil'
 
 function bundleToResources<T = any>(bundle: Bundle | undefined): T[] {
   if (!bundle?.entry) return []
@@ -70,10 +83,10 @@ function formatPatientMrn(patient: Patient): string {
 }
 
 function formatBirthDate(birthDate: string | undefined): string {
-  if (!birthDate) return 'Unknown'
+  if (!birthDate) return 'No consignada'
   const date = new Date(`${birthDate}T00:00:00`)
   if (Number.isNaN(date.getTime())) return birthDate
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('es-AR', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -81,11 +94,11 @@ function formatBirthDate(birthDate: string | undefined): string {
 }
 
 function formatAge(birthDate: string | undefined): string {
-  if (!birthDate) return 'Unknown'
+  if (!birthDate) return 'No consignada'
 
   const today = new Date()
   const dob = new Date(`${birthDate}T00:00:00`)
-  if (Number.isNaN(dob.getTime())) return 'Unknown'
+  if (Number.isNaN(dob.getTime())) return 'No consignada'
 
   let age = today.getFullYear() - dob.getFullYear()
   const monthDelta = today.getMonth() - dob.getMonth()
@@ -95,12 +108,12 @@ function formatAge(birthDate: string | undefined): string {
     age -= 1
   }
 
-  return age >= 0 ? String(age) : 'Unknown'
+  return age >= 0 ? String(age) : 'No consignada'
 }
 
 function formatAddress(patient: Patient): string {
   const address = patient.address?.[0]
-  if (!address) return 'No address on file'
+  if (!address) return 'No consignado'
 
   const line = address.line?.join(', ')
   return [line, address.city, address.state, address.postalCode, address.country]
@@ -109,10 +122,10 @@ function formatAddress(patient: Patient): string {
 }
 
 function formatLastUpdated(lastUpdated: string | undefined): string {
-  if (!lastUpdated) return 'Unknown'
+  if (!lastUpdated) return 'No consignada'
   const date = new Date(lastUpdated)
   if (Number.isNaN(date.getTime())) return lastUpdated
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('es-AR', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -143,6 +156,45 @@ function formatDate(value: string | undefined): string {
     month: 'short',
     day: 'numeric',
   }).format(date)
+}
+
+function formatClinicalDate(value: string | undefined): string | undefined {
+  if (!value) return undefined
+  const date = new Date(`${value.slice(0, 10)}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('es-AR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date)
+}
+
+function decodeXhtmlText(value: string): string {
+  const entities: Record<string, string> = {
+    amp: '&',
+    apos: "'",
+    gt: '>',
+    lt: '<',
+    nbsp: ' ',
+    quot: '"',
+  }
+  return value.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, key: string) => {
+    if (key.startsWith('#x')) return String.fromCodePoint(Number.parseInt(key.slice(2), 16))
+    if (key.startsWith('#')) return String.fromCodePoint(Number.parseInt(key.slice(1), 10))
+    return entities[key.toLowerCase()] ?? entity
+  })
+}
+
+function narrativeLines(div: string | undefined): string[] {
+  if (!div) return []
+  const withBreaks = div
+    .replace(/<\/(p|li|div|h[1-6])>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+  return decodeXhtmlText(withBreaks)
+    .split('\n')
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
 }
 
 function normalizeExternalUrl(value: string | undefined): string | undefined {
@@ -214,7 +266,10 @@ export interface UiPatientDetail {
   birthDate: string
   age: string
   gender: string
+  dni: string
+  cuil: string
   address: string
+  relatedContact: string
   phone: string
   email: string
   lastUpdated: string
@@ -397,10 +452,13 @@ export async function getPatientDetail(id: string): Promise<UiPatientDetail | nu
     age: formatAge(patient.birthDate),
     gender: patient.gender
       ? patient.gender[0].toUpperCase() + patient.gender.slice(1)
-      : 'Unknown',
+      : 'No consignado',
+    dni: patient.identifier?.find((identifier) => identifier.system === AR_DNI_SYSTEM)?.value ?? 'No consignado',
+    cuil: patient.identifier?.find((identifier) => identifier.system === AR_CUIL_SYSTEM)?.value ?? 'No consignado',
     address: formatAddress(patient),
-    phone: patient.telecom?.find((entry) => entry.system === 'phone')?.value ?? 'None',
-    email: patient.telecom?.find((entry) => entry.system === 'email')?.value ?? 'None',
+    relatedContact: patient.contact?.[0]?.name?.text ?? 'No consignado',
+    phone: patient.telecom?.find((entry) => entry.system === 'phone')?.value ?? 'No consignado',
+    email: patient.telecom?.find((entry) => entry.system === 'email')?.value ?? 'No consignado',
     lastUpdated: formatLastUpdated(patient.meta?.lastUpdated),
   }
 }
@@ -548,14 +606,240 @@ export async function getRecentObservations(
       value: currentValue.value,
       unit: currentValue.unit,
       reference,
-      note: current.note?.[0]?.text,
-      recordedAt: formatDateTime(current.effectiveDateTime ?? current.meta?.lastUpdated),
+      note: current.meta?.tag?.some(
+        (tag) => tag.system === 'https://ozryn.app/fhir/CodeSystem/import-state',
+      )
+        ? 'Derivado del documento fuente; pendiente de validación clínica.'
+        : current.note?.[0]?.text,
+      recordedAt: current.effectivePeriod?.start
+        ? formatClinicalDate(current.effectivePeriod.start)
+        : formatDateTime(current.effectiveDateTime ?? current.meta?.lastUpdated),
       trend,
     })
     if (result.length >= count) break
   }
 
   return result
+}
+
+// ---------- Structured clinical record ----------
+
+export interface UiClinicalEntry {
+  id: string
+  title: string
+  detail?: string
+  date?: string
+  status?: string
+  source?: string
+}
+
+export interface UiDialysisParameter {
+  id: string
+  label: string
+  value: string
+}
+
+export interface UiEvolutionReport extends UiClinicalEntry {
+  kind: 'evolution' | 'study'
+  observations: Array<{
+    id: string
+    name: string
+    value: string
+    unit?: string
+  }>
+}
+
+export interface UiNarrativeSection {
+  title: string
+  lines: string[]
+}
+
+export interface UiPatientClinicalRecord {
+  conditions: UiClinicalEntry[]
+  procedures: UiClinicalEntry[]
+  medications: UiClinicalEntry[]
+  encounters: UiClinicalEntry[]
+  immunizations: UiClinicalEntry[]
+  studies: UiEvolutionReport[]
+  evolutions: UiEvolutionReport[]
+  dialysis: {
+    title: string
+    status?: string
+    schedule?: string
+    parameters: UiDialysisParameter[]
+  } | null
+  coverage?: UiClinicalEntry
+  narrativeSections: UiNarrativeSection[]
+  warnings: string[]
+}
+
+function codeableText(value: { text?: string; coding?: Array<{ display?: string; code?: string }> } | undefined): string {
+  return value?.text ?? value?.coding?.[0]?.display ?? value?.coding?.[0]?.code ?? 'Sin descripción'
+}
+
+function noteSource(notes: Array<{ text?: string }> | undefined): string | undefined {
+  const value = notes?.[0]?.text
+  return value?.replace(/^Texto fuente:\s*/i, '')
+}
+
+function questionnaireAnswer(answer: Record<string, unknown> | undefined): string {
+  if (!answer) return 'Sin valor'
+  for (const key of ['valueString', 'valueDecimal', 'valueInteger', 'valueBoolean', 'valueDate', 'valueDateTime', 'valueTime']) {
+    if (answer[key] !== undefined) return String(answer[key])
+  }
+  const quantity = answer.valueQuantity as { value?: number; unit?: string; code?: string } | undefined
+  if (quantity?.value !== undefined) {
+    return [String(quantity.value), quantity.unit ?? quantity.code].filter(Boolean).join(' ')
+  }
+  const coding = answer.valueCoding as { display?: string; code?: string } | undefined
+  return coding?.display ?? coding?.code ?? 'Sin valor'
+}
+
+export async function getPatientClinicalRecord(
+  patientId: string,
+): Promise<UiPatientClinicalRecord> {
+  const medplum = getMedplum()
+  const requests = [
+    medplum.searchResources('Composition', { subject: `Patient/${patientId}`, _sort: '-date', _count: '5' }),
+    medplum.searchResources('Condition', { subject: `Patient/${patientId}`, _count: '100' }),
+    medplum.searchResources('Procedure', { subject: `Patient/${patientId}`, _sort: '-date', _count: '100' }),
+    medplum.searchResources('MedicationStatement', { subject: `Patient/${patientId}`, _count: '100' }),
+    medplum.searchResources('Encounter', { subject: `Patient/${patientId}`, _sort: '-date', _count: '100' }),
+    medplum.searchResources('Immunization', { patient: `Patient/${patientId}`, _sort: '-date', _count: '100' }),
+    medplum.searchResources('DiagnosticReport', { subject: `Patient/${patientId}`, _sort: '-date', _count: '100' }),
+    medplum.searchResources('Observation', { subject: `Patient/${patientId}`, _sort: '-date', _count: '200' }),
+    medplum.searchResources('QuestionnaireResponse', { subject: `Patient/${patientId}`, _sort: '-authored', _count: '10' }),
+    medplum.searchResources('ServiceRequest', { subject: `Patient/${patientId}`, _sort: '-authored', _count: '10' }),
+    medplum.searchResources('Coverage', { beneficiary: `Patient/${patientId}`, _count: '10' }),
+  ]
+  const labels = [
+    'narrativa', 'condiciones', 'procedimientos', 'medicación', 'internaciones',
+    'vacunación', 'informes', 'observaciones', 'parámetros de diálisis',
+    'plan de diálisis', 'cobertura',
+  ]
+  const settled = await Promise.allSettled(requests)
+  const warnings: string[] = []
+  const at = <T extends Resource>(index: number): T[] => {
+    const result = settled[index]
+    if (result.status === 'rejected') {
+      warnings.push(`No se pudo cargar ${labels[index]}.`)
+      return []
+    }
+    return result.value as unknown as T[]
+  }
+
+  const compositions = at<Composition>(0)
+  const conditions = at<Condition>(1)
+  const procedures = at<Procedure>(2)
+  const medications = at<MedicationStatement>(3)
+  const encounters = at<Encounter>(4)
+  const immunizations = at<Immunization>(5)
+  const reports = at<DiagnosticReport>(6)
+  const observations = at<Observation>(7)
+  const questionnaires = at<QuestionnaireResponse>(8)
+  const serviceRequests = at<ServiceRequest>(9)
+  const coverages = at<Coverage>(10)
+  const observationsById = new Map(observations.map((observation) => [observation.id, observation]))
+
+  const reportItems = reports.map<UiEvolutionReport>((report) => {
+    const effective = report.effectiveDateTime ?? report.effectivePeriod?.start
+    const kind = report.category?.some(
+      (category) => category.coding?.some((coding) => coding.code === 'LAB'),
+    ) ? 'evolution' : 'study'
+    return {
+      id: report.id ?? '',
+      title: codeableText(report.code),
+      detail: report.conclusion,
+      date: formatClinicalDate(effective),
+      status: report.status,
+      kind,
+      observations: (report.result ?? []).flatMap((reference) => {
+        const observation = observationsById.get(getReferenceId(reference.reference) ?? '')
+        if (!observation?.id) return []
+        const measured = observationValue(observation)
+        return [{
+          id: observation.id,
+          name: codeableText(observation.code),
+          value: measured.value,
+          unit: measured.unit || undefined,
+        }]
+      }),
+    }
+  })
+
+  const questionnaire = questionnaires[0]
+  const serviceRequest = serviceRequests[0]
+  const parameters: UiDialysisParameter[] = (questionnaire?.item ?? []).map((item, index) => ({
+    id: item.linkId || String(index),
+    label: item.text ?? item.linkId,
+    value: questionnaireAnswer(item.answer?.[0] as unknown as Record<string, unknown> | undefined),
+  }))
+
+  return {
+    conditions: conditions.map((condition) => ({
+      id: condition.id ?? '',
+      title: codeableText(condition.code),
+      date: formatClinicalDate(condition.onsetDateTime),
+      detail: condition.onsetAge?.value !== undefined
+        ? `Inicio consignado a los ${condition.onsetAge.value} años`
+        : undefined,
+      status: condition.verificationStatus?.coding?.[0]?.code,
+      source: noteSource(condition.note),
+    })),
+    procedures: procedures.map((procedure) => ({
+      id: procedure.id ?? '',
+      title: codeableText(procedure.code),
+      date: formatClinicalDate(procedure.performedDateTime ?? procedure.performedPeriod?.start),
+      status: procedure.status,
+      source: noteSource(procedure.note),
+    })),
+    medications: medications.map((medication) => ({
+      id: medication.id ?? '',
+      title: codeableText(medication.medicationCodeableConcept),
+      detail: medication.dosage?.[0]?.text,
+      status: medication.status,
+      source: noteSource(medication.note),
+    })),
+    encounters: encounters.map((encounter) => ({
+      id: encounter.id ?? '',
+      title: codeableText(encounter.type?.[0]),
+      date: formatClinicalDate(encounter.period?.start),
+      detail: encounter.period?.end
+        ? `Hasta ${formatClinicalDate(encounter.period.end)}`
+        : undefined,
+      status: encounter.status,
+    })),
+    immunizations: immunizations.map((immunization) => ({
+      id: immunization.id ?? '',
+      title: codeableText(immunization.vaccineCode),
+      detail: immunization.occurrenceString,
+      status: immunization.status,
+      source: noteSource(immunization.note),
+    })),
+    studies: reportItems.filter((report) => report.kind === 'study'),
+    evolutions: reportItems.filter((report) => report.kind === 'evolution'),
+    dialysis: parameters.length || serviceRequest
+      ? {
+          title: codeableText(serviceRequest?.code),
+          status: serviceRequest?.status,
+          schedule: serviceRequest?.occurrenceTiming?.code?.text,
+          parameters,
+        }
+      : null,
+    coverage: coverages[0]
+      ? {
+          id: coverages[0].id ?? '',
+          title: coverages[0].payor?.[0]?.display ?? 'Cobertura',
+          detail: coverages[0].subscriberId,
+          status: coverages[0].status,
+        }
+      : undefined,
+    narrativeSections: (compositions[0]?.section ?? []).map((section) => ({
+      title: section.title ?? 'Sección clínica',
+      lines: narrativeLines(section.text?.div),
+    })).filter((section) => section.lines.length > 0),
+    warnings,
+  }
 }
 
 // ---------- Follow-up Tasks ----------
@@ -650,11 +934,7 @@ export async function updateFollowUpTaskStatus(
 
 export async function getFollowUpTasks(patientId: string): Promise<UiFollowUpTask[]> {
   const medplum = getMedplum()
-  const tasks = await medplum.searchResources('Task', {
-    for: `Patient/${patientId}`,
-    _sort: '-_lastUpdated',
-    _count: '25',
-  })
+  const tasks = await medplum.searchResources('Task', buildFollowUpSearchParams(patientId))
 
   return (tasks as Task[]).map((task) => ({
     id: task.id ?? '',
@@ -665,6 +945,14 @@ export async function getFollowUpTasks(patientId: string): Promise<UiFollowUpTas
     authoredOn: formatDateTime(task.authoredOn ?? task.meta?.lastUpdated),
     owner: task.owner?.display ?? task.owner?.reference ?? 'Unassigned',
   }))
+}
+
+export function buildFollowUpSearchParams(patientId: string): Record<string, string> {
+  return {
+    patient: `Patient/${patientId}`,
+    _sort: '-_lastUpdated',
+    _count: '25',
+  }
 }
 
 // ---------- Lightweight Documents ----------
@@ -736,12 +1024,18 @@ export async function getPatientDocuments(
 
   return (documents as DocumentReference[]).map((document) => {
     const attachment = document.content?.[0]?.attachment
+    let url: string | undefined
+    try {
+      url = normalizeExternalUrl(attachment?.url)
+    } catch {
+      url = undefined
+    }
     return {
       id: document.id ?? '',
       title: document.description ?? attachment?.title ?? 'Document',
       category: document.type?.text ?? 'Clinical document',
       date: formatDateTime(document.date ?? document.meta?.lastUpdated),
-      url: attachment?.url,
+      url,
     }
   })
 }

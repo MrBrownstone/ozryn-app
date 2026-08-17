@@ -24,7 +24,7 @@ export function CarePlanPanel({ patientId }: CarePlanPanelProps) {
         const res = await getCarePlanItems(patientId)
         if (!cancelled) setItems(res)
       } catch (e: any) {
-        if (!cancelled) setError(e?.message || "Failed to load care plan")
+        if (!cancelled) setError(e?.message || "No se pudo cargar el plan de atención")
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -36,21 +36,21 @@ export function CarePlanPanel({ patientId }: CarePlanPanelProps) {
   }, [patientId])
 
   return (
-    <Card className="p-6 border-border/60 flex flex-col">
-      <h2 className="text-lg font-semibold text-foreground mb-4">Care Plan</h2>
+    <Card className="flex flex-col border-border/70 p-5 shadow-none">
+      <h2 className="mb-4 text-lg font-semibold text-foreground">Plan de atención</h2>
 
       {error && (
         <p className="text-xs text-red-600 mb-2">{error}</p>
       )}
       {loading && (
-        <p className="text-xs text-muted-foreground mb-2">Loading…</p>
+        <p className="text-xs text-muted-foreground mb-2">Cargando…</p>
       )}
 
       <div className="space-y-3">
         {items.map((item) => (
           <div
             key={item.id}
-            className="flex items-start gap-3 p-3 bg-gradient-to-r from-cyan-50/50 to-teal-50/50 rounded-lg border border-border/40"
+            className="flex items-start gap-3 rounded-lg border border-border/70 p-3"
           >
             <div className="mt-0.5">
               {item.status === "completed" && <CheckCircle2 className="w-5 h-5 text-cyan-600" />}
@@ -73,7 +73,7 @@ export function CarePlanPanel({ patientId }: CarePlanPanelProps) {
         ))}
 
         {!loading && !error && items.length === 0 && (
-          <p className="text-xs text-muted-foreground">No active care plan.</p>
+          <p className="text-xs text-muted-foreground">No hay un plan de atención activo.</p>
         )}
       </div>
     </Card>

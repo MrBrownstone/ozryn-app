@@ -113,6 +113,25 @@ test('buildTenantAccessPolicyDefinitions lets Staff write clinical records only'
     ])
   }
 
+  for (const resourceType of [
+    'Binary',
+    'CarePlan',
+    'Composition',
+    'Condition',
+    'Coverage',
+    'DiagnosticReport',
+    'Encounter',
+    'Immunization',
+    'MedicationStatement',
+    'Procedure',
+    'QuestionnaireResponse',
+    'ServiceRequest',
+  ]) {
+    const resource = staffResources.find((entry) => entry.resourceType === resourceType)
+    assert.ok(resource, `Expected Staff policy to include read access to ${resourceType}`)
+    assert.equal(resource?.readonly, true)
+  }
+
   assert.equal(
     staffResources.some((entry) => entry.resourceType === '*'),
     false,

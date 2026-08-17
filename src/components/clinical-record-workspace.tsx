@@ -4,18 +4,15 @@ import type { ComponentProps, FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import {
   CheckCircle2,
-  ClipboardList,
   FilePlus2,
-  FileText,
-  ListChecks,
   Plus,
-  Stethoscope,
   UserPlus,
 } from 'lucide-react'
 
 import { CarePlanPanel } from '@/components/care-plan-panel'
 import { ObservationPanel } from '@/components/observation-panel'
 import { PatientDetail } from '@/components/patient-detail'
+import { PatientClinicalRecord } from '@/components/patient-clinical-record'
 import { PatientList } from '@/components/patient-list'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -709,7 +706,7 @@ function FollowUpsPanel({
         }
       } catch (err: any) {
         if (!cancelled) {
-          setError(err?.message || 'Could not load follow-ups.')
+          setError(err?.message || 'No se pudieron cargar los seguimientos.')
         }
       } finally {
         if (!cancelled) {
@@ -731,7 +728,7 @@ function FollowUpsPanel({
       await updateFollowUpTaskStatus(taskId, 'completed')
       onChanged()
     } catch (err: any) {
-      setError(err?.message || 'Could not update follow-up.')
+      setError(err?.message || 'No se pudo actualizar el seguimiento.')
     } finally {
       setUpdatingId(null)
     }
@@ -740,15 +737,15 @@ function FollowUpsPanel({
   return (
     <Card className="p-6 border-border/60">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-foreground">Follow-ups</h2>
+        <h2 className="text-lg font-semibold text-foreground">Seguimientos</h2>
         <Button type="button" size="sm" onClick={onAdd}>
           <Plus className="w-4 h-4" />
-          Add
+          Agregar
         </Button>
       </div>
 
       {error ? <p className="mb-3 text-xs text-red-600">{error}</p> : null}
-      {loading ? <p className="text-xs text-muted-foreground">Loading...</p> : null}
+      {loading ? <p className="text-xs text-muted-foreground">Cargando…</p> : null}
 
       <div className="space-y-3">
         {items.map((item) => (
@@ -760,7 +757,7 @@ function FollowUpsPanel({
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">{item.description}</p>
                 <p className="text-xs text-muted-foreground">
-                  Due {item.dueDate} · {item.owner}
+                  Vence {item.dueDate} · {item.owner}
                 </p>
               </div>
               <Badge variant={item.status === 'completed' ? 'secondary' : 'outline'}>
@@ -769,7 +766,7 @@ function FollowUpsPanel({
             </div>
             <div className="mt-3 flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
-                Priority: {item.priority} · Created {item.authoredOn}
+                Prioridad: {item.priority} · Creado {item.authoredOn}
               </p>
               {item.status !== 'completed' ? (
                 <Button
@@ -780,7 +777,7 @@ function FollowUpsPanel({
                   disabled={updatingId === item.id}
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  Done
+                  Completar
                 </Button>
               ) : null}
             </div>
@@ -788,7 +785,7 @@ function FollowUpsPanel({
         ))}
 
         {!loading && items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No follow-ups yet.</p>
+          <p className="text-sm text-muted-foreground">No hay seguimientos.</p>
         ) : null}
       </div>
     </Card>
@@ -838,15 +835,15 @@ function DocumentsPanel({
   return (
     <Card className="p-6 border-border/60">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-foreground">Documents</h2>
+        <h2 className="text-lg font-semibold text-foreground">Documentos</h2>
         <Button type="button" size="sm" onClick={onAdd}>
           <FilePlus2 className="w-4 h-4" />
-          Add
+          Agregar
         </Button>
       </div>
 
       {error ? <p className="mb-3 text-xs text-red-600">{error}</p> : null}
-      {loading ? <p className="text-xs text-muted-foreground">Loading...</p> : null}
+      {loading ? <p className="text-xs text-muted-foreground">Cargando…</p> : null}
 
       <div className="space-y-3">
         {items.map((item) => (
@@ -864,18 +861,18 @@ function DocumentsPanel({
               {item.url ? (
                 <Button asChild size="sm" variant="outline">
                   <a href={item.url} target="_blank" rel="noreferrer">
-                    Open
+                    Abrir
                   </a>
                 </Button>
               ) : (
-                <Badge variant="outline">Metadata</Badge>
+                <Badge variant="outline">Metadatos</Badge>
               )}
             </div>
           </div>
         ))}
 
         {!loading && items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No document references yet.</p>
+          <p className="text-sm text-muted-foreground">No hay documentos.</p>
         ) : null}
       </div>
     </Card>
@@ -923,70 +920,87 @@ export function ClinicalRecordWorkspace() {
 
         <div className="min-w-0 space-y-4">
           {selectedPatient ? (
-            <Tabs defaultValue="overview" className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <TabsList className="w-full justify-start overflow-x-auto lg:w-auto">
-                  <TabsTrigger value="overview">
-                    <ClipboardList className="w-4 h-4" />
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="data">
-                    <Stethoscope className="w-4 h-4" />
-                    Data
-                  </TabsTrigger>
-                  <TabsTrigger value="followups">
-                    <ListChecks className="w-4 h-4" />
-                    Follow-ups
-                  </TabsTrigger>
-                  <TabsTrigger value="documents">
-                    <FileText className="w-4 h-4" />
-                    Documents
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+            <div className="space-y-4">
+              <PatientDetail
+                patientId={selectedPatient}
+                refreshKey={refreshKey}
+                onEditPatient={openEditPatient}
+              />
+              <Tabs defaultValue="overview" className="gap-4">
+                <div className="border-b border-border">
+                  <TabsList className="h-auto w-full justify-start gap-6 overflow-x-auto rounded-none bg-transparent p-0 text-muted-foreground">
+                    {[
+                      ['overview', 'Resumen'],
+                      ['history', 'Historia clínica'],
+                      ['dialysis', 'Diálisis'],
+                      ['evolution', 'Evolución'],
+                      ['followups', 'Seguimientos'],
+                      ['documents', 'Documentos'],
+                    ].map(([value, label]) => (
+                      <TabsTrigger
+                        key={value}
+                        value={value}
+                        className="relative h-11 flex-none rounded-none border-0 bg-transparent px-0 text-sm font-medium shadow-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:after:bg-primary"
+                      >
+                        {label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
 
-              <TabsContent value="overview" className="space-y-4">
-                <PatientDetail
-                  patientId={selectedPatient}
-                  refreshKey={refreshKey}
-                  onEditPatient={openEditPatient}
-                />
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <ObservationPanel
+                <TabsContent value="overview" className="space-y-4">
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    <ObservationPanel
+                      patientId={selectedPatient}
+                      refreshKey={refreshKey}
+                      onAddObservation={() => setObservationDialogOpen(true)}
+                    />
+                    <CarePlanPanel patientId={selectedPatient} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="history">
+                  <PatientClinicalRecord
                     patientId={selectedPatient}
                     refreshKey={refreshKey}
-                    onAddObservation={() => setObservationDialogOpen(true)}
+                    view="history"
                   />
-                  <CarePlanPanel patientId={selectedPatient} />
-                </div>
-              </TabsContent>
+                </TabsContent>
 
-              <TabsContent value="data">
-                <ObservationPanel
-                  patientId={selectedPatient}
-                  count={10}
-                  refreshKey={refreshKey}
-                  onAddObservation={() => setObservationDialogOpen(true)}
-                />
-              </TabsContent>
+                <TabsContent value="dialysis">
+                  <PatientClinicalRecord
+                    patientId={selectedPatient}
+                    refreshKey={refreshKey}
+                    view="dialysis"
+                  />
+                </TabsContent>
 
-              <TabsContent value="followups">
-                <FollowUpsPanel
-                  patientId={selectedPatient}
-                  refreshKey={refreshKey}
-                  onAdd={() => setFollowUpDialogOpen(true)}
-                  onChanged={refreshClinicalRecord}
-                />
-              </TabsContent>
+                <TabsContent value="evolution">
+                  <PatientClinicalRecord
+                    patientId={selectedPatient}
+                    refreshKey={refreshKey}
+                    view="evolution"
+                  />
+                </TabsContent>
 
-              <TabsContent value="documents">
-                <DocumentsPanel
-                  patientId={selectedPatient}
-                  refreshKey={refreshKey}
-                  onAdd={() => setDocumentDialogOpen(true)}
-                />
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="followups">
+                  <FollowUpsPanel
+                    patientId={selectedPatient}
+                    refreshKey={refreshKey}
+                    onAdd={() => setFollowUpDialogOpen(true)}
+                    onChanged={refreshClinicalRecord}
+                  />
+                </TabsContent>
+
+                <TabsContent value="documents">
+                  <DocumentsPanel
+                    patientId={selectedPatient}
+                    refreshKey={refreshKey}
+                    onAdd={() => setDocumentDialogOpen(true)}
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
           ) : (
             <Card className="flex min-h-[520px] items-center justify-center border-border/60 p-8">
               <div className="max-w-md text-center">

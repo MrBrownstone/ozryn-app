@@ -34,15 +34,22 @@ export const STAFF_CLINICAL_WRITE_RESOURCE_TYPES = [
 ] as const
 
 export const STAFF_CLINICAL_READ_RESOURCE_TYPES = [
+  'Binary',
   'CarePlan',
+  'Composition',
   'Condition',
+  'Coverage',
   'DiagnosticReport',
   'Encounter',
+  'Immunization',
   'MedicationRequest',
+  'MedicationStatement',
   'Organization',
   'Practitioner',
   'PractitionerRole',
   'Procedure',
+  'QuestionnaireResponse',
+  'ServiceRequest',
 ] as const
 
 export function buildProjectScopeSearchParams(projectId: string): {

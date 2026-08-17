@@ -33,7 +33,7 @@ export function ObservationPanel({
         const obs = await getRecentObservations(patientId, count)
         if (!cancelled) setItems(obs)
       } catch (e: any) {
-        if (!cancelled) setError(e?.message || "Failed to load observations")
+        if (!cancelled) setError(e?.message || "No se pudieron cargar las observaciones")
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -45,13 +45,13 @@ export function ObservationPanel({
   }, [count, patientId, refreshKey])
 
   return (
-    <Card className="p-6 border-border/60 flex flex-col">
+    <Card className="flex flex-col border-border/70 p-5 shadow-none">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-foreground">Recent Observations</h2>
+        <h2 className="text-lg font-semibold text-foreground">Observaciones recientes</h2>
         {onAddObservation ? (
           <Button type="button" size="sm" onClick={onAddObservation}>
             <Plus className="w-4 h-4" />
-            Add
+            Agregar
           </Button>
         ) : null}
       </div>
@@ -60,19 +60,19 @@ export function ObservationPanel({
         <p className="text-xs text-red-600 mb-2">{error}</p>
       )}
       {loading && (
-        <p className="text-xs text-muted-foreground mb-2">Loading…</p>
+        <p className="text-xs text-muted-foreground mb-2">Cargando…</p>
       )}
 
       <div className="space-y-3">
         {items.map((obs) => (
           <div
             key={obs.name + obs.value + obs.unit}
-            className="flex items-center justify-between p-3 bg-linear-to-r from-cyan-50/50 to-teal-50/50 rounded-lg border border-border/40"
+            className="flex items-start justify-between gap-4 rounded-lg border border-border/70 p-3"
           >
             <div className="flex-1">
               <p className="text-sm font-medium text-foreground">{obs.name}</p>
               {obs.reference && (
-                <p className="text-xs text-muted-foreground">Ref: {obs.reference}</p>
+                <p className="text-xs text-muted-foreground">Referencia: {obs.reference}</p>
               )}
               {obs.recordedAt && (
                 <p className="text-xs text-muted-foreground">{obs.recordedAt}</p>
@@ -82,7 +82,7 @@ export function ObservationPanel({
               )}
             </div>
             <div className="text-right">
-              <p className="text-lg font-semibold text-cyan-700">
+              <p className="text-lg font-semibold text-foreground">
                 {obs.value}{" "}
                 <span className="text-xs text-muted-foreground">{obs.unit}</span>
               </p>
@@ -96,7 +96,7 @@ export function ObservationPanel({
         ))}
 
         {!loading && !error && items.length === 0 && (
-          <p className="text-xs text-muted-foreground">No recent observations.</p>
+          <p className="text-xs text-muted-foreground">No hay observaciones recientes.</p>
         )}
       </div>
     </Card>

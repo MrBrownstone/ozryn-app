@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   OZRYN_MRN_SYSTEM,
   buildDocumentReferenceResource,
+  buildFollowUpSearchParams,
   buildFollowUpTaskResource,
   buildObservationResource,
   buildPatientResource,
@@ -75,6 +76,14 @@ test('buildFollowUpTaskResource creates a patient follow-up task', () => {
   assert.equal(task.for?.reference, 'Patient/patient-1')
   assert.equal(task.executionPeriod?.end, '2026-05-10')
   assert.equal(task.owner?.reference, 'Practitioner/practitioner-1')
+})
+
+test('buildFollowUpSearchParams uses the Task patient search parameter supported by Medplum', () => {
+  assert.deepEqual(buildFollowUpSearchParams('patient-1'), {
+    patient: 'Patient/patient-1',
+    _sort: '-_lastUpdated',
+    _count: '25',
+  })
 })
 
 test('buildDocumentReferenceResource rejects unsafe document URLs', () => {
